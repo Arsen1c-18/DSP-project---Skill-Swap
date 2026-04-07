@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Recommendations - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🔄 Skill Swap</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/home" class="active">Recommendations</a></li>
+                <li><a href="/task-search">Task Search</a></li>
+                <li><a href="/dashboard">Analytics</a></li>
+                <li><a href="/browse">Browse Users</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <div class="page-header">
+            <h1>🎯 Your Skill Exchange Matches</h1>
+            <p class="subtitle">Find the perfect partners to exchange skills with</p>
+        </div>
+
+        <!-- Current User Info (Demo Mode) -->
+        <div class="user-card current-user">
+            <div class="user-header">
+                <h3>{{ user.name }} <span class="badge">Viewing as</span></h3>
+                <p class="user-id">{{ user.user_id }}</p>
+            </div>
+            <p class="user-description">{{ user.description }}</p>
+            <div class="skills-display">
+                <div class="skill-section">
+                    <h4>✅ Can Teach:</h4>
+                    <div class="skills-tags">
+                        {% for skill in user.skills_offered_names %}
+                        <span class="skill-tag skill-offer">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="skill-section">
+                    <h4>📚 Want to Learn:</h4>
+                    <div class="skills-tags">
+                        {% for skill in user.skills_required_names %}
+                        <span class="skill-tag skill-need">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="recommendations-section">
+            <h2>🤝 Top Matches ({{ matches|length }})</h2>
+            
+            {% if matches %}
+                <div class="matches-grid">
+                    {% for match in matches %}
+                    <div class="match-card {% if match.is_perfect_match %}perfect-match{% endif %}">
+                        <div class="match-header">
+                            <div>
+                                <h3>{{ match.name }}</h3>
+                                {% if match.is_perfect_match %}
+                                <span class="badge badge-success">Perfect Match!</span>
+                                {% endif %}
+                            </div>
+                            <div class="match-score">
+                                <span class="score-value">{{ match.match_score }}</span>
+                                <span class="score-label">Score</span>
+                            </div>
+                        </div>
+                        
+                        <p class="match-description">{{ match.description }}</p>
+                        
+                        <div class="match-skills">
+                            {% if match.can_teach_you_names %}
+                            <div class="skill-exchange">
+                                <h4>👨‍🏫 Can teach you:</h4>
+                                <div class="skills-tags">
+                                    {% for skill in match.can_teach_you_names %}
+                                    <span class="skill-tag skill-receive">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if match.you_can_teach_names %}
+                            <div class="skill-exchange">
+                                <h4>👩‍🎓 You can teach:</h4>
+                                <div class="skills-tags">
+                                    {% for skill in match.you_can_teach_names %}
+                                    <span class="skill-tag skill-give">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="match-actions">
+                            <a href="/profile/{{ match.user_id }}" class="btn btn-primary btn-small">View Profile</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-results">
+                    <p>No matches found. Try browsing all users or search by task.</p>
+                    <a href="/browse" class="btn btn-secondary">Browse All Users</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Powered Skill Exchange</p>
+        </div>
+    </footer>
+</body>
+</html>

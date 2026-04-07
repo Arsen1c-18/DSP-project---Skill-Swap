@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.name }} - Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🔄 Skill Swap</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/home">Recommendations</a></li>
+                <li><a href="/task-search">Task Search</a></li>
+                <li><a href="/dashboard">Analytics</a></li>
+                <li><a href="/browse">Browse Users</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <div class="profile-header">
+            <div class="profile-avatar">{{ user.name[0] }}</div>
+            <div class="profile-info">
+                <h1>{{ user.name }}</h1>
+                <p class="user-id">{{ user.user_id }}</p>
+                <p class="profile-description">{{ user.description }}</p>
+            </div>
+        </div>
+
+        <div class="profile-skills">
+            <div class="skill-section-large">
+                <h2>✅ Skills I Can Teach</h2>
+                <div class="skills-tags">
+                    {% for skill in user.skills_offered_names %}
+                    <span class="skill-tag skill-offer">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="skill-section-large">
+                <h2>📚 Skills I Want to Learn</h2>
+                <div class="skills-tags">
+                    {% for skill in user.skills_required_names %}
+                    <span class="skill-tag skill-need">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if matches %}
+        <div class="recommendations-section">
+            <h2>🤝 Potential Matches for {{ user.name }}</h2>
+            <div class="matches-grid">
+                {% for match in matches %}
+                <div class="match-card-compact">
+                    <div class="match-header">
+                        <h3>{{ match.name }}</h3>
+                        <span class="score-badge">{{ match.match_score }}</span>
+                    </div>
+                    <p class="match-description-short">{{ match.description[:100] }}...</p>
+                    
+                    {% if match.can_teach_you_names %}
+                    <div class="skills-preview">
+                        <strong>Can teach:</strong>
+                        {% for skill in match.can_teach_you_names[:3] %}
+                        <span class="skill-tag-small">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <a href="/profile/{{ match.user_id }}" class="btn btn-primary btn-small">View Profile</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="profile-actions">
+            <a href="/home" class="btn btn-secondary">← Back to Recommendations</a>
+            <a href="/browse" class="btn btn-outline">Browse All Users</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Powered Skill Exchange</p>
+        </div>
+    </footer>
+</body>
+</html>

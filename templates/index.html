@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Swap Platform - Exchange Skills, Grow Together</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🔄 Skill Swap</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/" class="active">Home</a></li>
+                <li><a href="/home">Recommendations</a></li>
+                <li><a href="/task-search">Task Search</a></li>
+                <li><a href="/dashboard">Analytics</a></li>
+                <li><a href="/browse">Browse Users</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Exchange Skills. Learn Together. Grow Faster.</h1>
+                <p class="hero-subtitle">
+                    Connect with people who can teach you what you want to learn, 
+                    while sharing your expertise with others.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.total_users }}</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.total_skills }}</div>
+                        <div class="stat-label">Skills Available</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ stats.avg_skills_offered }}</div>
+                        <div class="stat-label">Avg Skills/User</div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="/home" class="btn btn-primary btn-large">Find Skill Partners</a>
+                    <a href="/task-search" class="btn btn-secondary btn-large">Search by Task</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3>Mutual Matching</h3>
+                    <p>Find users who can teach what you need while you teach what they want. Perfect skill exchange.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Smart Task Search</h3>
+                    <p>Describe your project in plain English. Our NLP engine finds the best matches for you.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Skill Analytics</h3>
+                    <p>Discover trending skills, supply/demand gaps, and what skills you should consider learning.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Related Skills</h3>
+                    <p>Get matched with users who have related skills, not just exact matches.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Start Learning?</h2>
+            <p>Explore the platform and discover your perfect skill exchange partners</p>
+            <div class="cta-actions">
+                <a href="/home" class="btn btn-primary btn-large">View Recommendations</a>
+                <a href="/dashboard" class="btn btn-outline btn-large">See Analytics Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Powered Skill Exchange</p>
+        </div>
+    </footer>
+</body>
+</html>

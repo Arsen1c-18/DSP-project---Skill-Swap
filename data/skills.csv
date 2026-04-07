@@ -1,0 +1,111 @@
+skill_id,skill_name,category
+skill_001,Python,Programming
+skill_002,JavaScript,Programming
+skill_003,Java,Programming
+skill_004,C++,Programming
+skill_005,C#,Programming
+skill_006,Ruby,Programming
+skill_007,Go,Programming
+skill_008,Rust,Programming
+skill_009,PHP,Programming
+skill_010,TypeScript,Programming
+skill_011,React,Web Development
+skill_012,Vue.js,Web Development
+skill_013,Angular,Web Development
+skill_014,Node.js,Web Development
+skill_015,Django,Web Development
+skill_016,Flask,Web Development
+skill_017,HTML/CSS,Web Development
+skill_018,WordPress,Web Development
+skill_019,Tailwind CSS,Web Development
+skill_020,Bootstrap,Web Development
+skill_021,Machine Learning,Data Science & Analytics
+skill_022,Deep Learning,Data Science & Analytics
+skill_023,Data Analysis,Data Science & Analytics
+skill_024,Statistics,Data Science & Analytics
+skill_025,SQL,Data Science & Analytics
+skill_026,Data Visualization,Data Science & Analytics
+skill_027,Excel,Data Science & Analytics
+skill_028,Tableau,Data Science & Analytics
+skill_029,Power BI,Data Science & Analytics
+skill_030,Google Analytics,Data Science & Analytics
+skill_031,Predictive Analytics,Data Science & Analytics
+skill_032,A/B Testing,Data Science & Analytics
+skill_033,UI/UX Design,Design & Creative
+skill_034,Graphic Design,Design & Creative
+skill_035,Figma,Design & Creative
+skill_036,Adobe XD,Design & Creative
+skill_037,Photoshop,Design & Creative
+skill_038,Illustrator,Design & Creative
+skill_039,3D Modeling,Design & Creative
+skill_040,Animation,Design & Creative
+skill_041,Video Editing,Design & Creative
+skill_042,Photography,Design & Creative
+skill_043,Brand Design,Design & Creative
+skill_044,Content Writing,Content & Writing
+skill_045,Copywriting,Content & Writing
+skill_046,Technical Writing,Content & Writing
+skill_047,Blogging,Content & Writing
+skill_048,Creative Writing,Content & Writing
+skill_049,Scriptwriting,Content & Writing
+skill_050,Editing & Proofreading,Content & Writing
+skill_051,Email Marketing,Content & Writing
+skill_052,Storytelling,Content & Writing
+skill_053,Journalism,Content & Writing
+skill_054,Digital Marketing,Marketing & Communication
+skill_055,SEO,Marketing & Communication
+skill_056,Social Media Marketing,Marketing & Communication
+skill_057,Content Marketing,Marketing & Communication
+skill_058,Public Relations,Marketing & Communication
+skill_059,Public Speaking,Marketing & Communication
+skill_060,Presentation Skills,Marketing & Communication
+skill_061,Influencer Marketing,Marketing & Communication
+skill_062,Brand Strategy,Marketing & Communication
+skill_063,Community Management,Marketing & Communication
+skill_064,Project Management,Business & Finance
+skill_065,Business Analysis,Business & Finance
+skill_066,Financial Analysis,Business & Finance
+skill_067,Accounting,Business & Finance
+skill_068,Budgeting,Business & Finance
+skill_069,Investment Analysis,Business & Finance
+skill_070,Business Strategy,Business & Finance
+skill_071,Entrepreneurship,Business & Finance
+skill_072,Sales,Business & Finance
+skill_073,Negotiation,Business & Finance
+skill_074,Financial Modeling,Business & Finance
+skill_075,Teaching,Teaching & Training
+skill_076,Curriculum Development,Teaching & Training
+skill_077,Training & Development,Teaching & Training
+skill_078,Coaching,Teaching & Training
+skill_079,Mentoring,Teaching & Training
+skill_080,E-Learning Development,Teaching & Training
+skill_081,Spanish,Languages
+skill_082,French,Languages
+skill_083,German,Languages
+skill_084,Mandarin Chinese,Languages
+skill_085,Japanese,Languages
+skill_086,Arabic,Languages
+skill_087,Translation,Languages
+skill_088,Research Methodology,Research & Academic
+skill_089,Academic Writing,Research & Academic
+skill_090,Literature Review,Research & Academic
+skill_091,Survey Design,Research & Academic
+skill_092,Qualitative Research,Research & Academic
+skill_093,Quantitative Research,Research & Academic
+skill_094,iOS Development,Mobile Development
+skill_095,Android Development,Mobile Development
+skill_096,React Native,Mobile Development
+skill_097,Flutter,Mobile Development
+skill_098,AWS,DevOps & Cloud
+skill_099,Docker,DevOps & Cloud
+skill_100,Kubernetes,DevOps & Cloud
+skill_101,CI/CD,DevOps & Cloud
+skill_102,Git,DevOps & Cloud
+skill_103,Agile/Scrum,Other
+skill_104,Testing/QA,Other
+skill_105,Cybersecurity,Other
+skill_106,Game Development,Other
+skill_107,Blockchain,Other
+skill_108,HR Management,Other
+skill_109,Customer Service,Other
+skill_110,Event Planning,Other

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Users - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🔄 Skill Swap</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/home">Recommendations</a></li>
+                <li><a href="/task-search">Task Search</a></li>
+                <li><a href="/dashboard">Analytics</a></li>
+                <li><a href="/browse" class="active">Browse Users</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <div class="page-header">
+            <h1>👥 Browse All Users</h1>
+            <p class="subtitle">Explore {{ users|length }} users in the platform</p>
+        </div>
+
+        <div class="browse-controls">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by name or skills...">
+            <select id="filterCategory" class="filter-select">
+                <option value="">All Categories</option>
+                <option value="Programming">Programming</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Data Science & Analytics">Data Science & Analytics</option>
+                <option value="Design & Creative">Design & Creative</option>
+                <option value="Content & Writing">Content & Writing</option>
+                <option value="Marketing & Communication">Marketing & Communication</option>
+                <option value="Business & Finance">Business & Finance</option>
+                <option value="Teaching & Training">Teaching & Training</option>
+                <option value="Languages">Languages</option>
+                <option value="Research & Academic">Research & Academic</option>
+                <option value="Mobile Development">Mobile Development</option>
+                <option value="DevOps & Cloud">DevOps & Cloud</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="users-grid" id="usersGrid">
+            {% for user in users %}
+            <div class="user-card" data-name="{{ user.name|lower }}" data-skills="{{ user.skills_offered_names|join(' ')|lower }}">
+                <div class="user-avatar-small">{{ user.name[0] }}</div>
+                <div class="user-info-compact">
+                    <h3>{{ user.name }}</h3>
+                    <p class="user-description-short">{{ user.description[:80] }}...</p>
+                    
+                    <div class="skills-preview-inline">
+                        <strong>Offers:</strong>
+                        {% for skill in user.skills_offered_names[:3] %}
+                        <span class="skill-tag-mini skill-offer">{{ skill }}</span>
+                        {% endfor %}
+                        {% if user.skills_offered_names|length > 3 %}
+                        <span class="more-indicator">+{{ user.skills_offered_names|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="skills-preview-inline">
+                        <strong>Wants:</strong>
+                        {% for skill in user.skills_required_names[:3] %}
+                        <span class="skill-tag-mini skill-need">{{ skill }}</span>
+                        {% endfor %}
+                        {% if user.skills_required_names|length > 3 %}
+                        <span class="more-indicator">+{{ user.skills_required_names|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="/profile/{{ user.user_id }}" class="btn btn-primary btn-small">View Profile</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Powered Skill Exchange</p>
+        </div>
+    </footer>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const filterCategory = document.getElementById('filterCategory');
+        const userCards = document.querySelectorAll('.user-card');
+
+        function filterUsers() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = filterCategory.value.toLowerCase();
+            
+            userCards.forEach(card => {
+                const name = card.dataset.name;
+                const skills = card.dataset.skills;
+                
+                const matchesSearch = name.includes(searchTerm) || skills.includes(searchTerm);
+                const matchesCategory = !category || skills.includes(category);
+                
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', filterUsers);
+        filterCategory.addEventListener('change', filterUsers);
+    </script>
+</body>
+</html>

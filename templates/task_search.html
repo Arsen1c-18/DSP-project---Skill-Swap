@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Search - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🔄 Skill Swap</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/home">Recommendations</a></li>
+                <li><a href="/task-search" class="active">Task Search</a></li>
+                <li><a href="/dashboard">Analytics</a></li>
+                <li><a href="/browse">Browse Users</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        <div class="page-header">
+            <h1>🔍 Find Help with NLP-Powered Task Search</h1>
+            <p class="subtitle">Describe your project or task, and we'll find the perfect person to help you</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <h3>What do you need help with?</h3>
+                <form id="taskSearchForm">
+                    <textarea 
+                        id="taskDescription" 
+                        class="task-input" 
+                        placeholder="e.g., I need help building a React website with user authentication and a clean modern UI..."
+                        rows="5"
+                        required
+                    ></textarea>
+                    <button type="submit" class="btn btn-primary btn-large">Search for Experts</button>
+                </form>
+            </div>
+
+            <div class="search-examples">
+                <h4>Example searches:</h4>
+<ul>
+                    <li onclick="fillExample(this)">
+                        "I need help with financial analysis and creating Excel dashboards for investors"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Looking for someone to help me improve my content writing and blogging skills"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Need a Spanish tutor to practice conversational skills for business travel"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Want to learn UI/UX design and master Figma for mobile app projects"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Help me develop a digital marketing strategy with SEO and social media"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Looking for a mentor in business strategy and entrepreneurship"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Need assistance with data visualization using Tableau and Power BI"
+                    </li>
+                    <li onclick="fillExample(this)">
+                        "Want to improve my public speaking and presentation skills for conferences"
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Finding the best matches...</p>
+        </div>
+
+        <div id="searchResults" class="search-results" style="display: none;">
+            <h2>Search Results</h2>
+            <div id="taskDescription"></div>
+            <div id="resultsContainer" class="matches-grid"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Powered Skill Exchange</p>
+        </div>
+    </footer>
+
+    <script>
+        function fillExample(element) {
+            document.getElementById('taskDescription').value = element.textContent.trim();
+        }
+
+        document.getElementById('taskSearchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskDescription = document.getElementById('taskDescription').value;
+            
+            if (!taskDescription.trim()) {
+                alert('Please enter a task description');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('searchResults').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/search-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ task_description: taskDescription })
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // Display results
+                displayResults(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                alert('An error occurred. Please try again.');
+            }
+        });
+
+        function displayResults(data) {
+            const resultsSection = document.getElementById('searchResults');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            resultsSection.style.display = 'block';
+            
+            if (data.matches.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results"><p>No matches found. Try different keywords.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            data.matches.forEach((match, index) => {
+                const isPerfect = match.combined_score >= 0.8;
+                
+                html += `
+                    <div class="match-card ${isPerfect ? 'perfect-match' : ''}">
+                        <div class="match-header">
+                            <div>
+                                <h3>${match.name}</h3>
+                                <span class="badge">#${index + 1}</span>
+                            </div>
+                            <div class="match-score">
+                                <span class="score-value">${match.combined_score}</span>
+                                <span class="score-label">Score</span>
+                            </div>
+                        </div>
+                        
+                        <p class="match-description">${match.description}</p>
+                        
+                        ${match.matched_skills_names.length > 0 ? `
+                        <div class="skill-exchange">
+                            <h4>🎯 Relevant Skills:</h4>
+                            <div class="skills-tags">
+                                ${match.matched_skills_names.map(skill => 
+                                    `<span class="skill-tag skill-receive">${skill}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="match-metrics">
+                            <span class="metric">Skill Match: ${match.skill_match_score}</span>
+                            <span class="metric">Text Similarity: ${match.text_similarity}</span>
+                        </div>
+                        
+                        <div class="match-actions">
+                            <a href="/profile/${match.user_id}" class="btn btn-primary btn-small">View Profile</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>
