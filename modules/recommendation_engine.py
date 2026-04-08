@@ -26,6 +26,20 @@ class RecommendationEngine:
         user = user_row.iloc[0].to_dict()
         return user
     
+    def update_user(self, user_id: str, name: str, description: str) -> bool:
+        """Update user details and save to CSV"""
+        idx = self.users_df.index[self.users_df['user_id'] == user_id]
+        if not idx.empty:
+            self.users_df.loc[idx, 'name'] = name
+            self.users_df.loc[idx, 'description'] = description
+            # Convert back lists to comma separated strings before saving
+            df_to_save = self.users_df.copy()
+            df_to_save['skills_offered'] = df_to_save['skills_offered'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
+            df_to_save['skills_required'] = df_to_save['skills_required'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
+            df_to_save.to_csv(config.USERS_FILE, index=False)
+            return True
+        return False
+    
     def get_all_users(self) -> List[Dict]:
         """Get all user profiles"""
         return self.users_df.to_dict('records')

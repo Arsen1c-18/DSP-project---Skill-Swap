@@ -18,6 +18,12 @@
                 <li><a href="/task-search">Task Search</a></li>
                 <li><a href="/dashboard">Analytics</a></li>
                 <li><a href="/browse" class="active">Browse Users</a></li>
+                {% if session.get('user_id') %}
+                <li><a href="/profile/{{ session.get('user_id') }}">Profile</a></li>
+                <li><a href="/logout">Logout</a></li>
+                {% else %}
+                <li><a href="/login" style="font-weight: bold;">Login</a></li>
+                {% endif %}
             </ul>
         </div>
     </nav>

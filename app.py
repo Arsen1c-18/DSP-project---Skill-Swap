@@ -2,7 +2,7 @@
 Skill Swap Platform - Flask Application
 Main application with routes for all features
 """
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import pandas as pd
 import json
 import config
@@ -12,6 +12,7 @@ from modules.analytics import SkillAnalytics
 from modules.skill_graph import SkillGraph
 
 app = Flask(__name__)
+app.secret_key = 'skill_swap_demo_secret'
 
 # Initialize modules at startup
 print("Initializing Skill Swap Platform...")
@@ -33,19 +34,59 @@ def index():
     return render_template('index.html', stats=stats)
 
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == 'demo' and password == 'demo':
+            session['user_id'] = 'user_001'
+            return redirect(url_for('home'))
+        else:
+            return render_template('login.html', error='Invalid credentials. Try demo/demo.')
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    """Logout user"""
+    session.pop('user_id', None)
+    return redirect(url_for('index'))
+
+
+@app.route('/edit-profile', methods=['GET', 'POST'])
+def edit_profile():
+    """Edit user profile"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    user = recommendation_engine.get_user_by_id(user_id)
+    if not user:
+        return "User not found", 404
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        if recommendation_engine.update_user(user_id, name, description):
+            return redirect(url_for('profile', user_id=user_id))
+    
+    return render_template('edit_profile.html', user=user)
+
+
 @app.route('/home')
 def home():
-    """Home page with recommendations (demo: showing recommendations for a sample user)"""
-    # For demo, use first user or random user
-    sample_user_id = 'user_001'
+    """Home page with recommendations"""
+    sample_user_id = session.get('user_id')
+    
+    if not sample_user_id:
+        return redirect(url_for('login'))
+
     user = recommendation_engine.get_user_by_id(sample_user_id)
     
     if not user:
-        # Get random user
-        users = recommendation_engine.get_random_users(1)
-        if users:
-            user = users[0]
-            sample_user_id = user['user_id']
+        return redirect(url_for('login'))
     
     # Get recommendations
     matches = recommendation_engine.find_mutual_matches(sample_user_id, top_n=10)
