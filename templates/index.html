@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skill Swap Platform - Exchange Skills, Grow Together</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -16,7 +17,6 @@
                 <li><a href="/" class="active">Home</a></li>
                 <li><a href="/home">Recommendations</a></li>
                 <li><a href="/task-search">Task Search</a></li>
-                <li><a href="/dashboard">Analytics</a></li>
                 <li><a href="/browse">Browse Users</a></li>
             </ul>
         </div>
@@ -52,44 +52,141 @@
         </div>
     </header>
 
-    <section class="features">
-        <div class="container">
-            <h2 class="section-title">How It Works</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🤝</div>
-                    <h3>Mutual Matching</h3>
-                    <p>Find users who can teach what you need while you teach what they want. Perfect skill exchange.</p>
+    <section class="dashboard-section container">
+        <h2 class="section-title">🌍 Platform Insights</h2>
+        <p class="section-subtitle" style="text-align: center; margin-top: -2rem; margin-bottom: 3rem; color: var(--text-secondary);">
+            Real-time look at our community's expertise and learning trends
+        </p>
+
+        <div class="dashboard-grid">
+            <!-- Community Expertise Pool -->
+            <div class="chart-card">
+                <h3>💎 Community Expertise Pool</h3>
+                <p class="chart-description">The most popular skills our mentors are offering right now.</p>
+                <div id="chartMostOffered"></div>
+            </div>
+
+            <!-- Global Learning Trends -->
+            <div class="chart-card">
+                <h3>🚀 Global Learning Trends</h3>
+                <p class="chart-description">High-demand skills our community is eager to master.</p>
+                <div id="chartMostRequired"></div>
+            </div>
+
+            <!-- Market Opportunities -->
+            <div class="chart-card chart-card-wide">
+                <h3>📈 Market Opportunities (High-Demand Gaps)</h3>
+                <p class="chart-description">These skills have the highest demand-to-supply ratio. Perfect for learning and sharing!</p>
+                <div id="chartSkillGaps"></div>
+            </div>
+        </div>
+
+        <div class="insights-section">
+            <h2>💡 Quick Insights</h2>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <h4>🔥 Trending Skills</h4>
+                    <ul>
+                        {% for gap in skill_gaps[:5] %}
+                        <li><strong>{{ gap.skill_name }}</strong> - {{ gap.demand }} people looking for this</li>
+                        {% endfor %}
+                    </ul>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3>Smart Task Search</h3>
-                    <p>Describe your project in plain English. Our NLP engine finds the best matches for you.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Skill Analytics</h3>
-                    <p>Discover trending skills, supply/demand gaps, and what skills you should consider learning.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔗</div>
-                    <h3>Related Skills</h3>
-                    <p>Get matched with users who have related skills, not just exact matches.</p>
+                <div class="insight-card">
+                    <h4>⭐ Top Expertise Area</h4>
+                    <ul>
+                        {% for skill in most_offered[:5] %}
+                        <li><strong>{{ skill.skill_name }}</strong> - {{ skill.count }} mentors available</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="cta">
-        <div class="container">
-            <h2>Ready to Start Learning?</h2>
-            <p>Explore the platform and discover your perfect skill exchange partners</p>
-            <div class="cta-actions">
-                <a href="/home" class="btn btn-primary btn-large">View Recommendations</a>
-                <a href="/dashboard" class="btn btn-outline btn-large">See Analytics Dashboard</a>
-            </div>
-        </div>
-    </section>
+    <script>
+        // Data from Flask
+        const mostOffered = {{ most_offered | tojson }};
+        const mostRequired = {{ most_required | tojson }};
+        const skillGaps = {{ skill_gaps | tojson }};
+
+        // Chart 1: Community Expertise (Offered)
+        {
+            const data = [{
+                x: mostOffered.map(s => s.count),
+                y: mostOffered.map(s => s.skill_name),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: '#2563eb',
+                    opacity: 0.8
+                }
+            }];
+
+            const layout = {
+                margin: { l: 150, r: 20, t: 20, b: 40 },
+                xaxis: { title: 'Number of Mentors' },
+                yaxis: { autorange: 'reversed' },
+                height: 350,
+                font: { family: 'inherit' }
+            };
+
+            Plotly.newPlot('chartMostOffered', data, layout, {responsive: true, displayModeBar: false});
+        }
+
+        // Chart 2: Learning Trends (Required)
+        {
+            const data = [{
+                x: mostRequired.map(s => s.count),
+                y: mostRequired.map(s => s.skill_name),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: '#10b981',
+                    opacity: 0.8
+                }
+            }];
+
+            const layout = {
+                margin: { l: 150, r: 20, t: 20, b: 40 },
+                xaxis: { title: 'Number of Learners' },
+                yaxis: { autorange: 'reversed' },
+                height: 350,
+                font: { family: 'inherit' }
+            };
+
+            Plotly.newPlot('chartMostRequired', data, layout, {responsive: true, displayModeBar: false});
+        }
+
+        // Chart 3: Skill Gaps
+        {
+            const data = [{
+                x: skillGaps.map(s => s.skill_name),
+                y: skillGaps.map(s => s.gap_score),
+                type: 'bar',
+                marker: {
+                    color: skillGaps.map(s => s.gap_score),
+                    colorscale: 'Viridis',
+                    opacity: 0.8
+                },
+                text: skillGaps.map(s => `+${s.gap_score}`),
+                textposition: 'auto'
+            }];
+
+            const layout = {
+                margin: { l: 60, r: 20, t: 20, b: 100 },
+                xaxis: { 
+                    tickangle: -45,
+                    title: 'Skills'
+                },
+                yaxis: { title: 'Demand Gap' },
+                height: 400,
+                font: { family: 'inherit' }
+            };
+
+            Plotly.newPlot('chartSkillGaps', data, layout, {responsive: true, displayModeBar: false});
+        }
+    </script>
 
     <footer>
         <div class="container">

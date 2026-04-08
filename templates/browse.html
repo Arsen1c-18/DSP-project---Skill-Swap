@@ -16,7 +16,6 @@
                 <li><a href="/">Home</a></li>
                 <li><a href="/home">Recommendations</a></li>
                 <li><a href="/task-search">Task Search</a></li>
-                <li><a href="/dashboard">Analytics</a></li>
                 <li><a href="/browse" class="active">Browse Users</a></li>
             </ul>
         </div>
@@ -31,26 +30,21 @@
         <div class="browse-controls">
             <input type="text" id="searchInput" class="search-input" placeholder="Search by name or skills...">
             <select id="filterCategory" class="filter-select">
-                <option value="">All Categories</option>
-                <option value="Programming">Programming</option>
-                <option value="Web Development">Web Development</option>
-                <option value="Data Science & Analytics">Data Science & Analytics</option>
-                <option value="Design & Creative">Design & Creative</option>
-                <option value="Content & Writing">Content & Writing</option>
-                <option value="Marketing & Communication">Marketing & Communication</option>
-                <option value="Business & Finance">Business & Finance</option>
-                <option value="Teaching & Training">Teaching & Training</option>
-                <option value="Languages">Languages</option>
-                <option value="Research & Academic">Research & Academic</option>
-                <option value="Mobile Development">Mobile Development</option>
-                <option value="DevOps & Cloud">DevOps & Cloud</option>
-                <option value="Other">Other</option>
+                <option value="">All Categories & Skills</option>
+                {% for category, skills in skills_by_cat.items() %}
+                <optgroup label="{{ category }}">
+                    <option value="{{ category }}">{{ category }} (All)</option>
+                    {% for skill in skills %}
+                    <option value="{{ skill }}">{{ skill }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
             </select>
         </div>
 
         <div class="users-grid" id="usersGrid">
             {% for user in users %}
-            <div class="user-card" data-name="{{ user.name|lower }}" data-skills="{{ user.skills_offered_names|join(' ')|lower }}">
+            <div class="user-card" data-name="{{ user.name|lower }}" data-skills="{{ (user.skills_offered_names + user.skills_offered_categories)|join(' ')|lower }}">
                 <div class="user-avatar-small">{{ user.name[0] }}</div>
                 <div class="user-info-compact">
                     <h3>{{ user.name }}</h3>
@@ -113,8 +107,27 @@
             });
         }
 
-        searchInput.addEventListener('input', filterUsers);
-        filterCategory.addEventListener('change', filterUsers);
+        // Improved mutual reset logic
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value.length > 0) {
+                filterCategory.selectedIndex = 0; // Reset to "All Categories & Skills"
+            }
+            filterUsers();
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length > 0) {
+                filterCategory.selectedIndex = 0;
+                filterUsers();
+            }
+        });
+
+        filterCategory.addEventListener('change', () => {
+            if (filterCategory.value !== '') {
+                searchInput.value = '';
+            }
+            filterUsers();
+        });
     </script>
 </body>
 </html>

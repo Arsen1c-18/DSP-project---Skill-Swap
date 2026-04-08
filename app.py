@@ -28,9 +28,18 @@ users_df = pd.read_csv(config.USERS_FILE)
 
 @app.route('/')
 def index():
-    """Landing page"""
+    """Landing page with integrated analytics dashboard"""
+    # Get analytics data
     stats = analytics.get_summary_stats()
-    return render_template('index.html', stats=stats)
+    most_offered = analytics.get_most_offered_skills(10)
+    most_required = analytics.get_most_required_skills(10)
+    skill_gaps = analytics.get_skill_gaps(5)
+    
+    return render_template('index.html', 
+                         stats=stats,
+                         most_offered=most_offered,
+                         most_required=most_required,
+                         skill_gaps=skill_gaps)
 
 
 @app.route('/home')
@@ -111,56 +120,8 @@ def api_search_task():
     })
 
 
-@app.route('/dashboard')
-def dashboard():
-    """Analytics dashboard"""
-    # Get analytics data
-    most_offered = analytics.get_most_offered_skills(15)
-    most_required = analytics.get_most_required_skills(15)
-    supply_demand = analytics.get_supply_demand_comparison(15)
-    skill_gaps = analytics.get_skill_gaps(10)
-    stats = analytics.get_summary_stats()
-    category_dist = analytics.get_category_distribution()
-    
-    return render_template('dashboard.html',
-                         most_offered=most_offered,
-                         most_required=most_required,
-                         supply_demand=supply_demand,
-                         skill_gaps=skill_gaps,
-                         stats=stats,
-                         category_dist=category_dist)
 
 
-@app.route('/api/analytics/most-offered')
-def api_most_offered():
-    """API for most offered skills"""
-    top_n = request.args.get('top_n', 15, type=int)
-    data = analytics.get_most_offered_skills(top_n)
-    return jsonify(data)
-
-
-@app.route('/api/analytics/most-required')
-def api_most_required():
-    """API for most required skills"""
-    top_n = request.args.get('top_n', 15, type=int)
-    data = analytics.get_most_required_skills(top_n)
-    return jsonify(data)
-
-
-@app.route('/api/analytics/supply-demand')
-def api_supply_demand():
-    """API for supply vs demand comparison"""
-    top_n = request.args.get('top_n', 15, type=int)
-    data = analytics.get_supply_demand_comparison(top_n)
-    return jsonify(data)
-
-
-@app.route('/api/analytics/skill-gaps')
-def api_skill_gaps():
-    """API for skill gaps"""
-    top_n = request.args.get('top_n', 10, type=int)
-    data = analytics.get_skill_gaps(top_n)
-    return jsonify(data)
 
 
 @app.route('/api/user/<user_id>')
@@ -196,12 +157,22 @@ def browse_users():
     """Browse all users"""
     users = recommendation_engine.get_all_users()
     
-    # Convert skill IDs to names for display
+    # Get all skills grouped by category for the dropdown
+    # We group by category and get a list of skill names for each
+    skills_by_cat = skills_df.groupby('category')['skill_name'].apply(list).to_dict()
+    
+    # Convert skill IDs to names for display and categories for filtering
     for user in users:
+        # Get skill names
         user['skills_offered_names'] = recommendation_engine.get_skill_names(user['skills_offered'])
         user['skills_required_names'] = recommendation_engine.get_skill_names(user['skills_required'])
+        
+        # Get categories for offered skills to enable category filtering
+        # Filter skills_df for the IDs this user offers and get unique categories
+        user_offered_ids = user['skills_offered']
+        user['skills_offered_categories'] = list(set(skills_df[skills_df['skill_id'].isin(user_offered_ids)]['category'].tolist()))
     
-    return render_template('browse.html', users=users)
+    return render_template('browse.html', users=users, skills_by_cat=skills_by_cat)
 
 
 if __name__ == '__main__':
