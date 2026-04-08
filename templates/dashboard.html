@@ -3,10 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Skill Swap</title>
+    <title>Skill Search — Skill Swap</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
+        /* ── Layout ──────────────────────────────────────────── */
+        .page-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) { .page-grid { grid-template-columns: 1fr; } }
+
         .dash-section {
             background: var(--card-bg);
             border-radius: 10px;
@@ -14,290 +23,397 @@
             box-shadow: var(--shadow);
             margin-bottom: 1rem;
         }
-        .dash-section h2 {
-            font-size: 1rem;
-            margin-bottom: 0.6rem;
-            color: var(--text-primary);
-        }
+        .dash-section h2 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .sub-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; }
 
-        /* User card */
-        .user-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
+        /* ── User card ───────────────────────────────────────── */
+        .user-bar { display: flex; align-items: center; gap: 0.75rem; }
         .user-avatar {
-            width: 38px; height: 38px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            font-weight: 700;
-            flex-shrink: 0;
+            width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            color: white; display: flex; align-items: center;
+            justify-content: center; font-size: 1rem; font-weight: 700;
         }
         .user-meta h3 { font-size: 0.95rem; margin-bottom: 0.1rem; }
-        .user-meta p { color: var(--text-secondary); font-size: 0.8rem; }
-        .user-skills-row {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 0.6rem;
-            flex-wrap: wrap;
-        }
-        .user-skills-col strong {
-            display: block;
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.2rem;
-        }
+        .user-meta p { color: var(--text-secondary); font-size: 0.78rem; }
+        .user-skills-row { display: flex; gap: 1.25rem; margin-top: 0.6rem; flex-wrap: wrap; }
+        .user-skills-col strong { display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.2rem; }
 
-        /* Task search */
+        /* ── Search tabs ─────────────────────────────────────── */
+        .search-mode-bar {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 3px;
+            margin-bottom: 0.75rem;
+        }
+        .mode-btn {
+            flex: 1; padding: 0.45rem 0.5rem;
+            border: none; border-radius: 6px;
+            background: none; cursor: pointer;
+            font-size: 0.82rem; font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .mode-btn.active { background: white; color: var(--primary-color); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+        /* ── Task search ─────────────────────────────────────── */
         .task-input {
-            width: 100%;
-            padding: 0.6rem 0.85rem;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 0.88rem;
-            font-family: inherit;
-            margin-bottom: 0.5rem;
-            resize: vertical;
-            min-height: 56px;
+            width: 100%; padding: 0.6rem 0.85rem;
+            border: 2px solid var(--border-color); border-radius: 6px;
+            font-size: 0.88rem; font-family: inherit;
+            margin-bottom: 0.5rem; resize: vertical; min-height: 60px;
         }
         .task-input:focus { outline: none; border-color: var(--primary-color); }
-        .search-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
 
-        /* Results */
-        #taskResults { margin-top: 0.6rem; }
+        /* ── Skill dropdown search ───────────────────────────── */
+        .skill-search-wrap { position: relative; margin-bottom: 0.5rem; }
+        .skill-search-input {
+            width: 100%; padding: 0.55rem 0.85rem;
+            border: 2px solid var(--border-color); border-radius: 6px;
+            font-size: 0.88rem; font-family: inherit; box-sizing: border-box;
+        }
+        .skill-search-input:focus { outline: none; border-color: var(--primary-color); }
+        .skill-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+            background: white; border: 1px solid var(--border-color);
+            border-radius: 6px; max-height: 200px; overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1); display: none;
+        }
+        .skill-dropdown.open { display: block; }
+        .skill-option {
+            padding: 0.4rem 0.85rem; cursor: pointer; font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .skill-option:last-child { border-bottom: none; }
+        .skill-option:hover { background: #eff6ff; }
+        .skill-option .cat-badge {
+            font-size: 0.68rem; color: var(--text-secondary);
+            background: #f1f5f9; border-radius: 3px; padding: 1px 5px;
+        }
+        .selected-skills-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; min-height: 24px; }
+        .selected-chip {
+            background: #eff6ff; border: 1px solid #bfdbfe;
+            color: #1d4ed8; font-size: 0.78rem; border-radius: 20px;
+            padding: 2px 8px; display: flex; align-items: center; gap: 4px;
+        }
+        .selected-chip button {
+            background: none; border: none; cursor: pointer;
+            color: #6b7280; font-size: 0.9rem; padding: 0; line-height: 1;
+        }
+        .selected-chip button:hover { color: #ef4444; }
+
+        /* ── Results ─────────────────────────────────────────── */
+        #taskResults, #skillResults { margin-top: 0.6rem; }
         .result-card {
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 0.65rem 0.9rem;
-            margin-bottom: 0.5rem;
-            background: var(--bg-color);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            padding: 0.65rem 0.9rem; margin-bottom: 0.5rem; background: var(--bg-color);
         }
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 0.25rem;
-        }
+        .result-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.2rem; }
         .result-header h4 { font-size: 0.88rem; }
-        .result-score {
-            background: var(--primary-color);
-            color: white;
-            padding: 1px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .result-desc {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            margin-bottom: 0.3rem;
-        }
+        .result-score { background: #6366f1; color: white; padding: 1px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .result-match-count { background: #10b981; color: white; padding: 1px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .result-desc { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 0.3rem; }
         .result-skills { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-
-        /* Matches grid */
-        .matches-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; }
-        .match-card-s {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.75rem;
-            background: var(--bg-color);
-        }
-        .match-card-s h4 { font-size: 0.88rem; margin-bottom: 0.15rem; }
-        .match-card-s .desc { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 0.35rem; }
-        .match-card-s .exchange { margin-bottom: 0.3rem; }
-        .match-card-s .exchange strong {
-            display: block;
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.15rem;
-        }
-        .match-score-s {
-            font-size: 0.72rem;
-            color: white;
-            background: var(--primary-color);
-            padding: 1px 6px;
-            border-radius: 4px;
-            float: right;
-        }
-
-        /* Loading */
-        .spinner-sm {
-            display: inline-block;
-            width: 14px; height: 14px;
-            border: 2px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-right: 4px;
-        }
+        .spinner-sm { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 4px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .no-results-msg {
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            padding: 0.5rem 0;
-        }
+        .no-results-msg { color: var(--text-secondary); font-size: 0.82rem; padding: 0.5rem 0; }
 
-        /* Analytics */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+        /* ── Matches grid ────────────────────────────────────── */
+        .matches-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.6rem; }
+        .match-card-s {
+            border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 0.75rem; background: var(--bg-color);
         }
-        .analytics-grid .chart-card {
-            background: var(--bg-color);
-            padding: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .analytics-grid .chart-card h3 { font-size: 0.88rem; margin-bottom: 0.25rem; }
+        .match-card-s h4 { font-size: 0.88rem; margin-bottom: 0.1rem; }
+        .match-card-s .desc { color: var(--text-secondary); font-size: 0.76rem; margin-bottom: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .match-card-s .exchange strong { display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.1rem; }
+        .match-card-s .exchange { margin-bottom: 0.25rem; }
+        .match-score-s { font-size: 0.7rem; color: white; background: #6366f1; padding: 1px 6px; border-radius: 4px; float: right; }
+
+        /* ── Analytics charts ────────────────────────────────── */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } .matches-list { grid-template-columns: 1fr; } }
+        .chart-card { background: var(--bg-color); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); }
+        .chart-card h3 { font-size: 0.88rem; margin-bottom: 0.2rem; }
+        .chart-card .chart-sub { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.4rem; }
         .full-width { grid-column: 1 / -1; }
 
-        @media (max-width: 768px) {
-            .analytics-grid { grid-template-columns: 1fr; }
-            .matches-list { grid-template-columns: 1fr; }
+        /* ── Scrollable matches container ────────────────────── */
+        .matches-scroll {
+            max-height: 320px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            padding-right: 2px;
         }
+        .matches-scroll::-webkit-scrollbar { width: 5px; }
+        .matches-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .matches-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* ── Suggestions panel ───────────────────────────────── */
+        .sugg-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+        .sugg-card {
+            display: flex; align-items: center; gap: 0.65rem;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: var(--bg-color);
+            transition: background 0.15s;
+        }
+        .sugg-card:hover { background: #f8faff; }
+        .sugg-icon {
+            width: 30px; height: 30px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; flex-shrink: 0;
+        }
+        .sugg-icon.arm   { background: #ede9fe; color: #7c3aed; }
+        .sugg-icon.demand { background: #fef3c7; color: #b45309; }
+        .sugg-body { flex: 1; min-width: 0; }
+        .sugg-name { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); }
+        .sugg-reason { font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sugg-badge {
+            font-size: 0.65rem; font-weight: 700; padding: 2px 6px;
+            border-radius: 4px; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .sugg-badge.arm    { background: #ede9fe; color: #7c3aed; }
+        .sugg-badge.demand { background: #fef3c7; color: #b45309; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand"><h1>Skill Swap</h1></div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/dashboard" class="active">Dashboard</a></li>
-                <li><a href="/logout">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
+<nav class="navbar">
+    <div class="container">
+        <div class="nav-brand"><h1>Skill Swap</h1></div>
+        <ul class="nav-links">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/dashboard" class="active">Skill Search</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+</nav>
 
-    <div class="container" style="padding: 1rem 1rem 2rem;">
+<div class="container" style="padding: 1rem 1rem 2rem;">
 
-        <!-- User Info -->
-        <div class="dash-section">
-            <div class="user-bar">
-                <div class="user-avatar">{{ user.name[0] }}</div>
-                <div class="user-meta">
-                    <h3>{{ user.name }}</h3>
-                    <p>{{ user.description[:100] }}</p>
-                </div>
-            </div>
-            <div class="user-skills-row">
-                <div class="user-skills-col">
-                    <strong>Skills Offered</strong>
-                    <div class="skills-tags">
-                        {% for s in user.skills_offered_names %}
-                        <span class="skill-tag skill-offer">{{ s }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="user-skills-col">
-                    <strong>Skills Needed</strong>
-                    <div class="skills-tags">
-                        {% for s in user.skills_required_names %}
-                        <span class="skill-tag skill-need">{{ s }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
+    <!-- User Profile Card -->
+    <div class="dash-section">
+        <div class="user-bar">
+            <div class="user-avatar">{{ user.name[0] }}</div>
+            <div class="user-meta">
+                <h3>{{ user.name }}</h3>
+                <p>{{ user.description[:100] }}</p>
             </div>
         </div>
-
-        <!-- Task Search -->
-        <div class="dash-section">
-            <h2>Find Matches by Task</h2>
-            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.5rem;">Describe what you need done. The NLP engine matches your text to users with relevant skills.</p>
-            <textarea id="taskInput" class="task-input"
-                placeholder="e.g. I need help building a React website with a clean UI and user authentication..."></textarea>
-            <div class="search-row">
-                <button class="btn btn-primary" onclick="searchTask()">Search</button>
-                <span id="searchStatus"></span>
+        <div class="user-skills-row">
+            <div class="user-skills-col">
+                <strong>Skills Offered</strong>
+                <div class="skills-tags">
+                    {% for s in user.skills_offered_names %}
+                    <span class="skill-tag skill-offer">{{ s }}</span>
+                    {% endfor %}
+                </div>
             </div>
-            <div id="taskResults"></div>
-        </div>
-
-        <!-- Mutual Matches -->
-        <div class="dash-section">
-            <h2>Your Skill Matches ({{ matches|length }})</h2>
-            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.6rem;">Users whose offered skills align with your needs, and vice versa.</p>
-            {% if matches %}
-            <div class="matches-list">
-                {% for m in matches %}
-                <div class="match-card-s">
-                    <span class="match-score-s">{{ m.match_score }}</span>
-                    <h4>{{ m.name }}</h4>
-                    <p class="desc">{{ m.description[:80] }}...</p>
-                    {% if m.can_teach_you_names %}
-                    <div class="exchange">
-                        <strong>They offer you:</strong>
-                        <div class="skills-tags">
-                            {% for s in m.can_teach_you_names %}
-                            <span class="skill-tag-mini skill-receive">{{ s }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% if m.you_can_teach_names %}
-                    <div class="exchange">
-                        <strong>They need from you:</strong>
-                        <div class="skills-tags">
-                            {% for s in m.you_can_teach_names %}
-                            <span class="skill-tag-mini skill-give">{{ s }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="no-results-msg">No mutual matches found for your current skill set.</p>
-            {% endif %}
-        </div>
-
-        <!-- Analytics -->
-        <div class="dash-section">
-            <h2>Skill Demand Analytics</h2>
-            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.5rem;">Data from the dataset — most offered and most in demand.</p>
-            <div class="analytics-grid">
-                <div class="chart-card">
-                    <h3>Most Offered Skills</h3>
-                    <div id="chartOffered"></div>
-                </div>
-                <div class="chart-card">
-                    <h3>Most Required Skills</h3>
-                    <div id="chartRequired"></div>
-                </div>
-                <div class="chart-card full-width">
-                    <h3>Unmet Demand (Skill Gap)</h3>
-                    <div id="chartGaps"></div>
+            <div class="user-skills-col">
+                <strong>Skills Needed</strong>
+                <div class="skills-tags">
+                    {% for s in user.skills_required_names %}
+                    <span class="skill-tag skill-need">{{ s }}</span>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Skill Swap Platform | Data Science Project</p>
+    <div class="page-grid">
+        <!-- LEFT: Search panel -->
+        <div>
+            <!-- Search box -->
+            <div class="dash-section">
+                <h2>Find People</h2>
+
+                <!-- Mode toggle -->
+                <div class="search-mode-bar">
+                    <button class="mode-btn active" id="modeTask" onclick="setMode('task')">By Task Description</button>
+                    <button class="mode-btn" id="modeSkill" onclick="setMode('skill')">By Skill</button>
+                </div>
+
+                <!-- Task mode -->
+                <div id="taskPanel">
+                    <p class="sub-label">Describe what you need — the NLP engine finds users with matching skills.</p>
+                    <textarea id="taskInput" class="task-input" placeholder="e.g. I need help building a React site with authentication..."></textarea>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <button class="btn btn-primary" onclick="searchTask()" style="font-size:0.85rem;padding:0.5rem 1rem;">Search</button>
+                        <span id="taskStatus" style="font-size:0.8rem;color:var(--text-secondary)"></span>
+                    </div>
+                    <div id="taskResults"></div>
+                </div>
+
+                <!-- Skill mode -->
+                <div id="skillPanel" style="display:none;">
+                    <p class="sub-label">Select one or more skills — find users who offer them.</p>
+
+                    <div class="skill-search-wrap">
+                        <input type="text" id="skillSearchInput" class="skill-search-input"
+                               placeholder="Type to filter skills..." autocomplete="off"
+                               oninput="filterSkills(this.value)"
+                               onfocus="openDropdown()"
+                               onblur="setTimeout(closeDropdown, 150)">
+                        <div id="skillDropdown" class="skill-dropdown"></div>
+                    </div>
+
+                    <div class="selected-skills-row" id="selectedChips"></div>
+
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <button class="btn btn-primary" onclick="searchBySkill()" style="font-size:0.85rem;padding:0.5rem 1rem;">Search</button>
+                        <button onclick="clearSkills()" style="background:none;border:none;font-size:0.82rem;color:var(--text-secondary);cursor:pointer;">Clear</button>
+                        <span id="skillStatus" style="font-size:0.8rem;color:var(--text-secondary)"></span>
+                    </div>
+                    <div id="skillResults"></div>
+                </div>
+            </div>
+
+            <div class="dash-section">
+                <h2>Your Skill Matches ({{ matches|length }})</h2>
+                <p class="sub-label">Users whose offered skills match what you need, and vice versa.</p>
+                {% if matches %}
+                <div class="matches-scroll">
+                    {% for m in matches %}
+                    <div class="match-card-s">
+                        <span class="match-score-s">{{ m.match_score }}</span>
+                        <h4>{{ m.name }}</h4>
+                        <p class="desc">{{ m.description[:80] }}...</p>
+                        {% if m.can_teach_you_names %}
+                        <div class="exchange">
+                            <strong>They offer you:</strong>
+                            <div class="skills-tags">
+                                {% for s in m.can_teach_you_names %}
+                                <span class="skill-tag-mini skill-receive">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if m.you_can_teach_names %}
+                        <div class="exchange">
+                            <strong>They need from you:</strong>
+                            <div class="skills-tags">
+                                {% for s in m.you_can_teach_names %}
+                                <span class="skill-tag-mini skill-give">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-results-msg">No mutual matches found for your current skill set.</p>
+                {% endif %}
+            </div>
+
+            <!-- Skill Suggestions -->
+            <div class="dash-section">
+                <h2>Skills to Consider Learning</h2>
+                <p class="sub-label">Based on your current skills (via ARM) and what the community needs most.</p>
+                {% if suggestions %}
+                <div class="sugg-grid">
+                    {% for s in suggestions %}
+                    <div class="sugg-card">
+                        <div class="sugg-icon {{ s.source }}">
+                            {% if s.source == 'arm' %}&#x1F50D;{% else %}&#x1F4C8;{% endif %}
+                        </div>
+                        <div class="sugg-body">
+                            <div class="sugg-name">{{ s.skill_name }}</div>
+                            <div class="sugg-reason">{{ s.reason }}</div>
+                        </div>
+                        <span class="sugg-badge {{ s.source }}">
+                            {% if s.source == 'arm' %}ARM{% else %}Demand{% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-results-msg">No suggestions available yet.</p>
+                {% endif %}
+            </div>
         </div>
-    </footer>
+
+        <!-- RIGHT: Analytics -->
+        <div>
+            <div class="dash-section">
+                <h2>Skill Demand Analytics</h2>
+                <p class="sub-label">From 200 user profiles — what's being offered vs needed.</p>
+                <div class="charts-grid">
+
+                    <!-- Supply vs Demand: grouped bar -->
+                    <div class="chart-card full-width">
+                        <h3>Supply vs Demand — Top 10 Skills</h3>
+                        <p class="chart-sub">Blue = offered by users &nbsp;|&nbsp; Orange = needed by users</p>
+                        <div id="chartSupplyDemand"></div>
+                    </div>
+
+                    <!-- Skill Gap: horizontal bar with gradient -->
+                    <div class="chart-card full-width">
+                        <h3>Skill Gap — Unmet Demand</h3>
+                        <p class="chart-sub">How many more people need this skill than offer it. Bigger = bigger opportunity.</p>
+                        <div id="chartGap"></div>
+                    </div>
+
+                    <!-- Top Offered: donut -->
+                    <div class="chart-card">
+                        <h3>Top 6 Most Offered</h3>
+                        <p class="chart-sub">By share of user profiles</p>
+                        <div id="chartOfferedPie"></div>
+                    </div>
+
+                    <!-- Top Required: donut -->
+                    <div class="chart-card">
+                        <h3>Top 6 Most Needed</h3>
+                        <p class="chart-sub">By share of user profiles</p>
+                        <div id="chartRequiredPie"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container"><p>&copy; 2024 Skill Swap Platform | Data Science Project</p></div>
+</footer>
 
 <script>
-// ── Task Search ──
+// ── Skills data from backend ──────────────────────────────────
+const ALL_SKILLS = {{ skills_list | tojson }};
+const mostOffered  = {{ most_offered | tojson }};
+const mostRequired = {{ most_required | tojson }};
+const skillGaps    = {{ skill_gaps | tojson }};
+
+// ── Mode toggle ───────────────────────────────────────────────
+function setMode(mode) {
+    document.getElementById('taskPanel').style.display = mode === 'task' ? '' : 'none';
+    document.getElementById('skillPanel').style.display = mode === 'skill' ? '' : 'none';
+    document.getElementById('modeTask').classList.toggle('active', mode === 'task');
+    document.getElementById('modeSkill').classList.toggle('active', mode === 'skill');
+    // Reset task input when switching to skill mode (and vice versa)
+    if (mode === 'skill') {
+        document.getElementById('taskInput').value = '';
+        document.getElementById('taskResults').innerHTML = '';
+        document.getElementById('taskStatus').textContent = '';
+    } else {
+        document.getElementById('skillResults').innerHTML = '';
+        document.getElementById('skillStatus').textContent = '';
+    }
+}
+
+// ── Task search ───────────────────────────────────────────────
 async function searchTask() {
     const desc = document.getElementById('taskInput').value.trim();
     if (!desc) return;
-    const status = document.getElementById('searchStatus');
+    const status = document.getElementById('taskStatus');
     const results = document.getElementById('taskResults');
     status.innerHTML = '<span class="spinner-sm"></span> Searching...';
     results.innerHTML = '';
@@ -319,60 +435,205 @@ async function searchTask() {
                     <h4>#${i+1} ${m.name}</h4>
                     <span class="result-score">Score: ${m.combined_score}</span>
                 </div>
-                <p class="result-desc">${m.description ? m.description.substring(0, 120) + '...' : ''}</p>
+                <p class="result-desc">${(m.description||'').substring(0,120)}...</p>
                 <div class="result-skills">
                     ${(m.matched_skills_names||[]).map(s => `<span class="skill-tag-mini skill-receive">${s}</span>`).join('')}
                 </div>
             </div>
         `).join('');
-    } catch(e) {
-        status.textContent = 'Error. Try again.';
-    }
+    } catch(e) { status.textContent = 'Error. Try again.'; }
 }
 
-// ── Analytics Charts ──
-const mostOffered = {{ most_offered | tojson }};
-const mostRequired = {{ most_required | tojson }};
-const skillGaps = {{ skill_gaps | tojson }};
+// ── Skill dropdown search ─────────────────────────────────────
+let selectedSkills = {}; // { skill_id: skill_name }
 
-Plotly.newPlot('chartOffered', [{
-    x: mostOffered.map(s => s.count),
-    y: mostOffered.map(s => s.skill_name),
-    type: 'bar', orientation: 'h',
-    marker: { color: '#2563eb', opacity: 0.85 }
-}], {
-    margin: { l: 120, r: 10, t: 5, b: 25 },
-    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
-    xaxis: { tickfont: { size: 10 } },
-    height: 220, font: { family: 'inherit' }
-}, {responsive: true, displayModeBar: false});
+function filterSkills(query) {
+    const dropdown = document.getElementById('skillDropdown');
+    const q = query.toLowerCase();
+    const filtered = ALL_SKILLS.filter(s =>
+        s.skill_name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q)
+    ).slice(0, 30);
 
-Plotly.newPlot('chartRequired', [{
-    x: mostRequired.map(s => s.count),
-    y: mostRequired.map(s => s.skill_name),
-    type: 'bar', orientation: 'h',
-    marker: { color: '#10b981', opacity: 0.85 }
-}], {
-    margin: { l: 120, r: 10, t: 5, b: 25 },
-    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
-    xaxis: { tickfont: { size: 10 } },
-    height: 220, font: { family: 'inherit' }
-}, {responsive: true, displayModeBar: false});
+    dropdown.innerHTML = filtered.length ? filtered.map(s => `
+        <div class="skill-option" onclick="selectSkill('${s.skill_id}', '${s.skill_name.replace(/'/g,"\\'")}')">
+            <span>${s.skill_name}</span>
+            <span class="cat-badge">${s.category}</span>
+        </div>
+    `).join('') : '<div class="skill-option" style="color:var(--text-secondary)">No results</div>';
 
-Plotly.newPlot('chartGaps', [{
-    x: skillGaps.map(s => s.skill_name),
-    y: skillGaps.map(s => s.gap_score),
-    type: 'bar',
-    marker: { color: skillGaps.map(s => s.gap_score), colorscale: 'Viridis', opacity: 0.85 },
-    text: skillGaps.map(s => `+${s.gap_score}`),
-    textposition: 'auto',
-    textfont: { size: 11 }
-}], {
-    margin: { l: 40, r: 10, t: 5, b: 60 },
+    dropdown.classList.add('open');
+}
+
+function openDropdown() {
+    filterSkills(document.getElementById('skillSearchInput').value);
+}
+
+function closeDropdown() {
+    document.getElementById('skillDropdown').classList.remove('open');
+}
+
+function selectSkill(id, name) {
+    if (selectedSkills[id]) return; // already selected
+    selectedSkills[id] = name;
+    renderChips();
+    document.getElementById('skillSearchInput').value = '';
+    document.getElementById('skillDropdown').classList.remove('open');
+    document.getElementById('skillResults').innerHTML = '';
+    document.getElementById('skillStatus').textContent = '';
+}
+
+function removeSkill(id) {
+    delete selectedSkills[id];
+    renderChips();
+    document.getElementById('skillResults').innerHTML = '';
+}
+
+function clearSkills() {
+    selectedSkills = {};
+    renderChips();
+    document.getElementById('skillResults').innerHTML = '';
+    document.getElementById('skillStatus').textContent = '';
+}
+
+function renderChips() {
+    const container = document.getElementById('selectedChips');
+    container.innerHTML = Object.entries(selectedSkills).map(([id, name]) => `
+        <span class="selected-chip">
+            ${name}
+            <button onclick="removeSkill('${id}')" title="Remove">&times;</button>
+        </span>
+    `).join('');
+}
+
+async function searchBySkill() {
+    const ids = Object.keys(selectedSkills);
+    if (!ids.length) { document.getElementById('skillStatus').textContent = 'Select at least one skill.'; return; }
+    const status = document.getElementById('skillStatus');
+    const results = document.getElementById('skillResults');
+    status.innerHTML = '<span class="spinner-sm"></span> Searching...';
+    results.innerHTML = '';
+    try {
+        const res = await fetch('/api/search-skill', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ skill_ids: ids })
+        });
+        const data = await res.json();
+        status.textContent = '';
+        if (!data.matches || !data.matches.length) {
+            results.innerHTML = '<p class="no-results-msg">No users found offering those skills.</p>';
+            return;
+        }
+        results.innerHTML = data.matches.map((m, i) => `
+            <div class="result-card">
+                <div class="result-header">
+                    <h4>#${i+1} ${m.name}</h4>
+                    <span class="result-match-count">${m.matched_count} match${m.matched_count>1?'es':''}</span>
+                </div>
+                <p class="result-desc">${(m.description||'').substring(0,100)}...</p>
+                <div class="result-skills">
+                    ${m.matched_skill_names.map(s => `<span class="skill-tag-mini skill-receive">${s}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+    } catch(e) { status.textContent = 'Error. Try again.'; }
+}
+
+// ── Analytics Charts (vibrant) ────────────────────────────────
+// Build supply vs demand comparison from top 10 offered
+const topNames = mostOffered.slice(0, 10).map(s => s.skill_name);
+const requiredMap = {};
+mostRequired.forEach(s => { requiredMap[s.skill_name] = s.count; });
+const supplyVals  = topNames.map(n => mostOffered.find(s => s.skill_name === n).count);
+const demandVals  = topNames.map(n => requiredMap[n] || 0);
+
+Plotly.newPlot('chartSupplyDemand', [
+    {
+        name: 'Offered (Supply)',
+        x: topNames, y: supplyVals, type: 'bar',
+        marker: { color: '#3b82f6' },
+        text: supplyVals, textposition: 'outside', textfont: { size: 10 }
+    },
+    {
+        name: 'Needed (Demand)',
+        x: topNames, y: demandVals, type: 'bar',
+        marker: { color: '#f97316' },
+        text: demandVals, textposition: 'outside', textfont: { size: 10 }
+    }
+], {
+    barmode: 'group',
+    margin: { l: 30, r: 10, t: 10, b: 80 },
     xaxis: { tickangle: -35, tickfont: { size: 10 } },
     yaxis: { tickfont: { size: 10 } },
-    height: 240, font: { family: 'inherit' }
-}, {responsive: true, displayModeBar: false});
+    legend: { orientation: 'h', y: -0.45, font: { size: 11 } },
+    height: 260, font: { family: 'inherit' },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)',
+}, { responsive: true, displayModeBar: false });
+
+// Skill gap: horizontal bars with red-to-green gradient
+const gapColors = skillGaps.map((_, i) => {
+    const t = i / Math.max(skillGaps.length - 1, 1);
+    const r = Math.round(239 * (1 - t) + 16 * t);
+    const g = Math.round(68 * (1 - t) + 185 * t);
+    const b = Math.round(68 * (1 - t) + 129 * t);
+    return `rgb(${r},${g},${b})`;
+});
+
+Plotly.newPlot('chartGap', [{
+    x: skillGaps.map(s => s.gap_score),
+    y: skillGaps.map(s => s.skill_name),
+    type: 'bar', orientation: 'h',
+    marker: { color: gapColors },
+    text: skillGaps.map(s => `+${s.gap_score} unmet`),
+    textposition: 'auto', textfont: { size: 10, color: 'white' }
+}], {
+    margin: { l: 130, r: 60, t: 10, b: 25 },
+    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
+    xaxis: { tickfont: { size: 10 } },
+    height: 220, font: { family: 'inherit' },
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    paper_bgcolor: 'rgba(0,0,0,0)',
+}, { responsive: true, displayModeBar: false });
+
+// Donut: top offered
+const vibrantColors = ['#6366f1','#3b82f6','#06b6d4','#10b981','#f59e0b','#f97316','#ef4444','#8b5cf6'];
+const top6Offered = mostOffered.slice(0, 6);
+Plotly.newPlot('chartOfferedPie', [{
+    labels: top6Offered.map(s => s.skill_name),
+    values: top6Offered.map(s => s.count),
+    type: 'pie', hole: 0.42,
+    marker: { colors: vibrantColors },
+    textinfo: 'label+percent',
+    textfont: { size: 10 },
+    insidetextfont: { color: '#ffffff' },
+    outsidetextfont: { color: '#4b5563' },
+    hovertemplate: '<b>%{label}</b><br>%{value} users<br>%{percent}<extra></extra>'
+}], {
+    margin: { l: 5, r: 5, t: 5, b: 5 },
+    showlegend: false,
+    height: 200, font: { family: 'inherit' },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+}, { responsive: true, displayModeBar: false });
+
+const top6Required = mostRequired.slice(0, 6);
+Plotly.newPlot('chartRequiredPie', [{
+    labels: top6Required.map(s => s.skill_name),
+    values: top6Required.map(s => s.count),
+    type: 'pie', hole: 0.42,
+    marker: { colors: ['#f97316','#ef4444','#ec4899','#8b5cf6','#6366f1','#3b82f6'] },
+    textinfo: 'label+percent',
+    textfont: { size: 10 },
+    insidetextfont: { color: '#ffffff' },
+    outsidetextfont: { color: '#4b5563' },
+    hovertemplate: '<b>%{label}</b><br>%{value} users<br>%{percent}<extra></extra>'
+}], {
+    margin: { l: 5, r: 5, t: 5, b: 5 },
+    showlegend: false,
+    height: 200, font: { family: 'inherit' },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+}, { responsive: true, displayModeBar: false });
 </script>
 </body>
 </html>

@@ -3,90 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skill Swap Platform</title>
+    <title>Skill Swap — Dashboard</title>
+    <meta name="description" content="Data-driven peer-to-peer skill exchange. Offer what you know, get what you need.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 0.65rem 1.4rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .landing-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        .landing-section h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .section-desc { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem; }
+
+        /* ARM Rules */
+        .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 720px) { .rules-grid { grid-template-columns: 1fr; } }
+        .rules-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .rules-table th {
+            background: #f1f5ff;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border-color);
+        }
+        .rules-table td { padding: 0.45rem 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .rules-table tr:last-child td { border-bottom: none; }
+        .rules-table tr:hover td { background: #f8faff; }
+        .arrow { color: var(--primary-color); font-weight: 700; }
+        .lift-badge {
+            font-size: 0.72rem; font-weight: 700;
+            padding: 2px 7px; border-radius: 4px; color: white;
+            background: #10b981;
+        }
+        .lift-badge.med { background: #f59e0b; }
+        .no-rules { color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem 0; }
+
+        /* Insight cards */
+        .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 600px) { .insight-row { grid-template-columns: 1fr; } }
+        .insight-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; }
+        .insight-card h4 { font-size: 0.88rem; margin-bottom: 0.5rem; color: var(--primary-color); }
+        .insight-card ul { list-style: none; padding: 0; margin: 0; }
+        .insight-card li { font-size: 0.82rem; padding: 0.28rem 0; border-bottom: 1px solid var(--border-color); }
+        .insight-card li:last-child { border-bottom: none; }
+
+        /* Network */
+        #networkGraph {
+            width: 100%; height: 500px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #f8fafd;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1>Skill Swap</h1>
-            </div>
-            <ul class="nav-links">
-                {% if session.get('user_id') %}
-                <li><a href="/dashboard">Dashboard</a></li>
-                <li><a href="/logout">Logout</a></li>
-                {% else %}
-                <li><a href="/login">Login</a></li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+<nav class="navbar">
+    <div class="container">
+        <div class="nav-brand"><h1>Skill Swap</h1></div>
+        <ul class="nav-links">
+            {% if session.get('user_id') %}
+            <li><a href="/" class="active">Dashboard</a></li>
+            <li><a href="/dashboard">Skill Search</a></li>
+            <li><a href="/logout">Logout</a></li>
+            {% else %}
+            <li><a href="/login">Login</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
 
-    <header class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1 class="hero-title">Skill Swap Platform</h1>
-                <p class="hero-subtitle">
-                    Offer your skills. Get work done by others. A data-driven skill exchange.
-                </p>
-                <div class="hero-stats">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.total_users }}</div>
-                        <div class="stat-label">Users</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.total_skills }}</div>
-                        <div class="stat-label">Skills</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.avg_skills_offered }}</div>
-                        <div class="stat-label">Avg Skills/User</div>
-                    </div>
-                </div>
-                <div class="hero-actions">
-                    {% if session.get('user_id') %}
-                    <a href="/dashboard" class="btn btn-primary btn-large">Go to Dashboard</a>
+<!-- Hero -->
+<header class="hero">
+    <div class="container">
+        <h1 class="hero-title">Skill Swap Platform</h1>
+        <p class="hero-subtitle">Offer your skills. Get work done by others. A data-driven skill exchange.</p>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total_users }}</div>
+                <div class="stat-label">Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.total_skills }}</div>
+                <div class="stat-label">Skills</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ stats.avg_skills_offered }}</div>
+                <div class="stat-label">Avg Offered / User</div>
+            </div>
+        </div>
+        <div class="hero-actions">
+            {% if session.get('user_id') %}
+            <a href="/dashboard" class="btn btn-primary btn-large">Go to Skill Search</a>
+            {% else %}
+            <a href="/login" class="btn btn-primary btn-large">Login to Get Started</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<div class="container" style="padding: 2rem 1rem 3rem;">
+
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('network', this)">Skill Network</button>
+        <button class="tab-btn" onclick="switchTab('arm', this)">Association Rules</button>
+        <button class="tab-btn" onclick="switchTab('insights', this)">Quick Insights</button>
+    </div>
+
+    <!-- Tab: Network -->
+    <div id="tab-network" class="tab-panel active">
+        <div class="landing-section">
+            <h2>Skill Co-occurrence Network</h2>
+            <p class="section-desc">Each node is a skill. An edge connects two skills frequently offered <em>together</em>. Node size = how many users offer it. Hover for details.</p>
+            <div id="networkGraph"></div>
+        </div>
+    </div>
+
+    <!-- Tab: ARM -->
+    <div id="tab-arm" class="tab-panel">
+        <div class="landing-section">
+            <h2>Association Rule Mining Results</h2>
+            <p class="section-desc">Apriori algorithm on skill data. <strong>Confidence</strong> = how often the pair appears. <strong>Lift &gt; 1</strong> = stronger than random chance.</p>
+            <div class="rules-grid">
+                <div>
+                    <h3 style="font-size:0.95rem;margin-bottom:0.75rem;">If a user offers... they also often offer</h3>
+                    {% if arm_rules %}
+                    <table class="rules-table">
+                        <thead>
+                            <tr><th>If offers</th><th>Also likely offers</th><th>Conf.</th><th>Lift</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for r in arm_rules %}
+                            <tr>
+                                <td>{{ r.antecedent_name }}</td>
+                                <td><span class="arrow">→</span> {{ r.consequent_name }}</td>
+                                <td>{{ (r.confidence * 100)|round|int }}%</td>
+                                <td><span class="lift-badge {% if r.lift < 15 %}med{% endif %}">{{ r.lift }}×</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                     {% else %}
-                    <a href="/login" class="btn btn-primary btn-large">Login to Get Started</a>
+                    <p class="no-rules">Not enough data for rules yet.</p>
                     {% endif %}
                 </div>
+                <div>
+                    <h3 style="font-size:0.95rem;margin-bottom:0.75rem;">What is Association Rule Mining?</h3>
+                    <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.7;">
+                        ARM finds <strong>"If A then B"</strong> patterns — the same technique e-commerce sites use for <em>"Customers who bought X also bought Y."</em>
+                    </p>
+                    <br>
+                    <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.7;">
+                        Here, if many users who offer Skill A also offer Skill B, there's a natural clustering — these skills belong to the same domain or are typically learned together.
+                    </p>
+                    <br>
+                    <div style="background:#f1f5ff;border-radius:8px;padding:0.85rem;font-size:0.82rem;line-height:1.8;">
+                        <strong>Support</strong> = % of users with both skills<br>
+                        <strong>Confidence</strong> = P(B | A) — probability of B given A<br>
+                        <strong>Lift</strong> = how much more likely than random (>1 = meaningful)
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
+    </div>
 
-    <section class="dashboard-section container" style="padding: 3rem 1rem;">
-        <h2 class="section-title">Skill Demand from Dataset</h2>
-
-        <div class="dashboard-grid">
-            <div class="chart-card">
-                <h3>Most Offered Skills</h3>
-                <p class="chart-description">Skills users most frequently offer.</p>
-                <div id="chartMostOffered"></div>
-            </div>
-
-            <div class="chart-card">
-                <h3>Most Required Skills</h3>
-                <p class="chart-description">Skills users most frequently need.</p>
-                <div id="chartMostRequired"></div>
-            </div>
-
-            <div class="chart-card chart-card-wide">
-                <h3>Unmet Demand (Skill Gap)</h3>
-                <p class="chart-description">Skills where demand exceeds supply in the dataset.</p>
-                <div id="chartSkillGaps"></div>
-            </div>
-        </div>
-
-        <div class="insights-section" style="margin-top: 2rem;">
+    <!-- Tab: Insights -->
+    <div id="tab-insights" class="tab-panel">
+        <div class="landing-section">
             <h2>Quick Insights</h2>
-            <div class="insights-grid">
+            <p class="section-desc">Platform highlights derived from the 200-user dataset.</p>
+            <div class="insight-row">
                 <div class="insight-card">
-                    <h4>High-Demand Skills</h4>
+                    <h4>Highest Unmet Demand</h4>
                     <ul>
                         {% for gap in skill_gaps[:5] %}
-                        <li><strong>{{ gap.skill_name }}</strong> — requested by {{ gap.demand }} users</li>
+                        <li><strong>{{ gap.skill_name }}</strong> — {{ gap.demand }} need, {{ gap.supply }} offer</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -98,67 +218,117 @@
                         {% endfor %}
                     </ul>
                 </div>
+                <div class="insight-card">
+                    <h4>Most Requested Skills</h4>
+                    <ul>
+                        {% for skill in most_required[:5] %}
+                        <li><strong>{{ skill.skill_name }}</strong> — needed by {{ skill.count }} users</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="insight-card">
+                    <h4>Platform Stats</h4>
+                    <ul>
+                        <li>Total users: <strong>{{ stats.total_users }}</strong></li>
+                        <li>Skill catalogue size: <strong>{{ stats.total_skills }}</strong></li>
+                        <li>Avg skills offered: <strong>{{ stats.avg_skills_offered }}</strong></li>
+                        <li>Avg skills needed: <strong>{{ stats.avg_skills_required }}</strong></li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Skill Swap Platform | Data Science Project</p>
-        </div>
-    </footer>
+</div>
 
-    <script>
-        const mostOffered = {{ most_offered | tojson }};
-        const mostRequired = {{ most_required | tojson }};
-        const skillGaps = {{ skill_gaps | tojson }};
+<footer>
+    <div class="container">
+        <p>&copy; 2024 Skill Swap Platform | Data Science Project — NLP Matching + ARM + Network Analysis</p>
+    </div>
+</footer>
 
-        {
-            const data = [{
-                x: mostOffered.map(s => s.count),
-                y: mostOffered.map(s => s.skill_name),
-                type: 'bar', orientation: 'h',
-                marker: { color: '#2563eb', opacity: 0.8 }
-            }];
-            Plotly.newPlot('chartMostOffered', data, {
-                margin: { l: 150, r: 20, t: 20, b: 40 },
-                xaxis: { title: 'Number of Users' },
-                yaxis: { autorange: 'reversed' },
-                height: 350, font: { family: 'inherit' }
-            }, {responsive: true, displayModeBar: false});
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'network' && !window._networkDrawn) drawNetwork();
+}
+
+// Draw network immediately since it's the first tab
+async function drawNetwork() {
+    window._networkDrawn = true;
+    const el = document.getElementById('networkGraph');
+    el.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);font-size:0.88rem;text-align:center">Loading network graph...</div>';
+    try {
+        const res = await fetch('/api/skill-network');
+        const g = await res.json();
+        if (!g.nodes || !g.nodes.length) {
+            el.innerHTML = '<div style="padding:2rem;color:var(--text-secondary)">No data available.</div>';
+            return;
         }
+        // Multi-ring radial layout: most frequent nodes in center
+        const nodeMap = {};
+        const sorted = [...g.nodes].sort((a, b) => b.frequency - a.frequency);
+        const rings = [1, 6, 15, sorted.length];
+        sorted.forEach((n, i) => {
+            let ring = 0;
+            while (ring < rings.length - 1 && i >= rings[ring]) ring++;
+            const nodesInRing = ring === 0 ? 1 : rings[ring] - rings[ring - 1];
+            const posInRing  = ring === 0 ? 0 : i - rings[ring - 1];
+            const angle = ring === 0 ? 0 : (2 * Math.PI * posInRing) / nodesInRing;
+            const radii = [0, 0.33, 0.62, 1.0];
+            const r = radii[Math.min(ring, radii.length - 1)];
+            nodeMap[n.id] = { x: r * Math.cos(angle), y: r * Math.sin(angle), label: n.label, freq: n.frequency };
+        });
 
-        {
-            const data = [{
-                x: mostRequired.map(s => s.count),
-                y: mostRequired.map(s => s.skill_name),
-                type: 'bar', orientation: 'h',
-                marker: { color: '#10b981', opacity: 0.8 }
-            }];
-            Plotly.newPlot('chartMostRequired', data, {
-                margin: { l: 150, r: 20, t: 20, b: 40 },
-                xaxis: { title: 'Number of Users' },
-                yaxis: { autorange: 'reversed' },
-                height: 350, font: { family: 'inherit' }
-            }, {responsive: true, displayModeBar: false});
-        }
+        const maxW = Math.max(...g.edges.map(e => e.weight));
+        const edgeTraces = g.edges.map(e => {
+            const from = nodeMap[e.from], to = nodeMap[e.to];
+            if (!from || !to) return null;
+            const opacity = 0.25 + 0.6 * (e.weight / maxW);
+            return {
+                x: [from.x, to.x, null], y: [from.y, to.y, null],
+                mode: 'lines', type: 'scatter',
+                line: { width: Math.max(1, Math.round(e.normalized * 5)), color: `rgba(99,102,241,${opacity.toFixed(2)})` },
+                hoverinfo: 'skip', showlegend: false
+            };
+        }).filter(Boolean);
 
-        {
-            const data = [{
-                x: skillGaps.map(s => s.skill_name),
-                y: skillGaps.map(s => s.gap_score),
-                type: 'bar',
-                marker: { color: skillGaps.map(s => s.gap_score), colorscale: 'Viridis', opacity: 0.8 },
-                text: skillGaps.map(s => `+${s.gap_score}`),
-                textposition: 'auto'
-            }];
-            Plotly.newPlot('chartSkillGaps', data, {
-                margin: { l: 60, r: 20, t: 20, b: 100 },
-                xaxis: { tickangle: -45, title: 'Skills' },
-                yaxis: { title: 'Demand Gap' },
-                height: 400, font: { family: 'inherit' }
-            }, {responsive: true, displayModeBar: false});
-        }
-    </script>
+        const maxFreq = Math.max(...g.nodes.map(n => n.frequency));
+        const nodeTrace = {
+            x: g.nodes.map(n => nodeMap[n.id].x),
+            y: g.nodes.map(n => nodeMap[n.id].y),
+            mode: 'markers+text', type: 'scatter',
+            text: g.nodes.map(n => n.label),
+            textposition: 'top center',
+            textfont: { size: 9, color: '#1e293b' },
+            marker: {
+                size: g.nodes.map(n => 9 + 20 * (n.frequency / maxFreq)),
+                color: g.nodes.map(n => n.frequency),
+                colorscale: [[0,'#bfdbfe'],[0.5,'#3b82f6'],[1,'#1d4ed8']],
+                showscale: true,
+                colorbar: { title: 'Frequency', thickness: 12, len: 0.5, tickfont: { size: 10 } },
+                line: { color: 'white', width: 1.5 }
+            },
+            customdata: g.nodes.map(n => [n.label, n.frequency]),
+            hovertemplate: '<b>%{customdata[0]}</b><br>Offered by %{customdata[1]} users<extra></extra>',
+            showlegend: false
+        };
+
+        Plotly.newPlot('networkGraph', [...edgeTraces, nodeTrace], {
+            xaxis: { showgrid: false, zeroline: false, showticklabels: false },
+            yaxis: { showgrid: false, zeroline: false, showticklabels: false },
+            margin: { l: 10, r: 10, t: 10, b: 10 },
+            paper_bgcolor: '#f8fafd', plot_bgcolor: '#f8fafd',
+            hovermode: 'closest', font: { family: 'inherit' }, height: 500
+        }, { responsive: true, displayModeBar: false });
+    } catch(err) {
+        el.innerHTML = '<div style="padding:2rem;color:#ef4444">Failed to load network.</div>';
+    }
+}
+drawNetwork();
+</script>
 </body>
 </html>
