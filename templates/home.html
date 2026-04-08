@@ -10,7 +10,7 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <h1>🔄 Skill Swap</h1>
+                <h1>Skill Swap</h1>
             </div>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
@@ -29,8 +29,8 @@
 
     <div class="container main-content">
         <div class="page-header">
-            <h1>🎯 Your Skill Exchange Matches</h1>
-            <p class="subtitle">Find the perfect partners to exchange skills with</p>
+            <h1>Skill Exchange Matches</h1>
+            <p class="subtitle">People whose skills align with yours — you offer what they need, and they offer what you need.</p>
         </div>
 
         <!-- Current User Info (Demo Mode) -->
@@ -42,7 +42,7 @@
             <p class="user-description">{{ user.description }}</p>
             <div class="skills-display">
                 <div class="skill-section">
-                    <h4>✅ Can Teach:</h4>
+                    <h4>Skills Offered:</h4>
                     <div class="skills-tags">
                         {% for skill in user.skills_offered_names %}
                         <span class="skill-tag skill-offer">{{ skill }}</span>
@@ -50,7 +50,7 @@
                     </div>
                 </div>
                 <div class="skill-section">
-                    <h4>📚 Want to Learn:</h4>
+                    <h4>Skills Needed:</h4>
                     <div class="skills-tags">
                         {% for skill in user.skills_required_names %}
                         <span class="skill-tag skill-need">{{ skill }}</span>
@@ -62,7 +62,7 @@
 
         <!-- Recommendations -->
         <div class="recommendations-section">
-            <h2>🤝 Top Matches ({{ matches|length }})</h2>
+            <h2>Top Matches ({{ matches|length }})</h2>
             
             {% if matches %}
                 <div class="matches-grid">
@@ -86,7 +86,7 @@
                         <div class="match-skills">
                             {% if match.can_teach_you_names %}
                             <div class="skill-exchange">
-                                <h4>👨‍🏫 Can teach you:</h4>
+                                <h4>They offer:</h4>
                                 <div class="skills-tags">
                                     {% for skill in match.can_teach_you_names %}
                                     <span class="skill-tag skill-receive">{{ skill }}</span>
@@ -97,7 +97,7 @@
                             
                             {% if match.you_can_teach_names %}
                             <div class="skill-exchange">
-                                <h4>👩‍🎓 You can teach:</h4>
+                                <h4>They need from you:</h4>
                                 <div class="skills-tags">
                                     {% for skill in match.you_can_teach_names %}
                                     <span class="skill-tag skill-give">{{ skill }}</span>

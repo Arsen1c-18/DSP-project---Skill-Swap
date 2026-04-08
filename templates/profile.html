@@ -10,7 +10,7 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <h1>🔄 Skill Swap</h1>
+                <h1>Skill Swap</h1>
             </div>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
@@ -44,7 +44,7 @@
 
         <div class="profile-skills">
             <div class="skill-section-large">
-                <h2>✅ Skills I Can Teach</h2>
+                <h2>Skills Offered</h2>
                 <div class="skills-tags">
                     {% for skill in user.skills_offered_names %}
                     <span class="skill-tag skill-offer">{{ skill }}</span>
@@ -53,7 +53,7 @@
             </div>
 
             <div class="skill-section-large">
-                <h2>📚 Skills I Want to Learn</h2>
+                <h2>Skills Needed</h2>
                 <div class="skills-tags">
                     {% for skill in user.skills_required_names %}
                     <span class="skill-tag skill-need">{{ skill }}</span>
@@ -64,7 +64,7 @@
 
         {% if matches %}
         <div class="recommendations-section">
-            <h2>🤝 Potential Matches for {{ user.name }}</h2>
+            <h2>Potential Matches for {{ user.name }}</h2>
             <div class="matches-grid">
                 {% for match in matches %}
                 <div class="match-card-compact">
@@ -76,7 +76,7 @@
                     
                     {% if match.can_teach_you_names %}
                     <div class="skills-preview">
-                        <strong>Can teach:</strong>
+                        <strong>Can offer:</strong>
                         {% for skill in match.can_teach_you_names[:3] %}
                         <span class="skill-tag-small">{{ skill }}</span>
                         {% endfor %}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Skill Swap</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        .dash-section {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
+        }
+        .dash-section h2 {
+            font-size: 1rem;
+            margin-bottom: 0.6rem;
+            color: var(--text-primary);
+        }
+
+        /* User card */
+        .user-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .user-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .user-meta h3 { font-size: 0.95rem; margin-bottom: 0.1rem; }
+        .user-meta p { color: var(--text-secondary); font-size: 0.8rem; }
+        .user-skills-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .user-skills-col strong {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        /* Task search */
+        .task-input {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            margin-bottom: 0.5rem;
+            resize: vertical;
+            min-height: 56px;
+        }
+        .task-input:focus { outline: none; border-color: var(--primary-color); }
+        .search-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Results */
+        #taskResults { margin-top: 0.6rem; }
+        .result-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.65rem 0.9rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-color);
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.25rem;
+        }
+        .result-header h4 { font-size: 0.88rem; }
+        .result-score {
+            background: var(--primary-color);
+            color: white;
+            padding: 1px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .result-desc {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+        }
+        .result-skills { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+        /* Matches grid */
+        .matches-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; }
+        .match-card-s {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            background: var(--bg-color);
+        }
+        .match-card-s h4 { font-size: 0.88rem; margin-bottom: 0.15rem; }
+        .match-card-s .desc { color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 0.35rem; }
+        .match-card-s .exchange { margin-bottom: 0.3rem; }
+        .match-card-s .exchange strong {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.15rem;
+        }
+        .match-score-s {
+            font-size: 0.72rem;
+            color: white;
+            background: var(--primary-color);
+            padding: 1px 6px;
+            border-radius: 4px;
+            float: right;
+        }
+
+        /* Loading */
+        .spinner-sm {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .no-results-msg {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            padding: 0.5rem 0;
+        }
+
+        /* Analytics */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .analytics-grid .chart-card {
+            background: var(--bg-color);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .analytics-grid .chart-card h3 { font-size: 0.88rem; margin-bottom: 0.25rem; }
+        .full-width { grid-column: 1 / -1; }
+
+        @media (max-width: 768px) {
+            .analytics-grid { grid-template-columns: 1fr; }
+            .matches-list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand"><h1>Skill Swap</h1></div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard" class="active">Dashboard</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 1rem 1rem 2rem;">
+
+        <!-- User Info -->
+        <div class="dash-section">
+            <div class="user-bar">
+                <div class="user-avatar">{{ user.name[0] }}</div>
+                <div class="user-meta">
+                    <h3>{{ user.name }}</h3>
+                    <p>{{ user.description[:100] }}</p>
+                </div>
+            </div>
+            <div class="user-skills-row">
+                <div class="user-skills-col">
+                    <strong>Skills Offered</strong>
+                    <div class="skills-tags">
+                        {% for s in user.skills_offered_names %}
+                        <span class="skill-tag skill-offer">{{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="user-skills-col">
+                    <strong>Skills Needed</strong>
+                    <div class="skills-tags">
+                        {% for s in user.skills_required_names %}
+                        <span class="skill-tag skill-need">{{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Search -->
+        <div class="dash-section">
+            <h2>Find Matches by Task</h2>
+            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.5rem;">Describe what you need done. The NLP engine matches your text to users with relevant skills.</p>
+            <textarea id="taskInput" class="task-input"
+                placeholder="e.g. I need help building a React website with a clean UI and user authentication..."></textarea>
+            <div class="search-row">
+                <button class="btn btn-primary" onclick="searchTask()">Search</button>
+                <span id="searchStatus"></span>
+            </div>
+            <div id="taskResults"></div>
+        </div>
+
+        <!-- Mutual Matches -->
+        <div class="dash-section">
+            <h2>Your Skill Matches ({{ matches|length }})</h2>
+            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.6rem;">Users whose offered skills align with your needs, and vice versa.</p>
+            {% if matches %}
+            <div class="matches-list">
+                {% for m in matches %}
+                <div class="match-card-s">
+                    <span class="match-score-s">{{ m.match_score }}</span>
+                    <h4>{{ m.name }}</h4>
+                    <p class="desc">{{ m.description[:80] }}...</p>
+                    {% if m.can_teach_you_names %}
+                    <div class="exchange">
+                        <strong>They offer you:</strong>
+                        <div class="skills-tags">
+                            {% for s in m.can_teach_you_names %}
+                            <span class="skill-tag-mini skill-receive">{{ s }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if m.you_can_teach_names %}
+                    <div class="exchange">
+                        <strong>They need from you:</strong>
+                        <div class="skills-tags">
+                            {% for s in m.you_can_teach_names %}
+                            <span class="skill-tag-mini skill-give">{{ s }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results-msg">No mutual matches found for your current skill set.</p>
+            {% endif %}
+        </div>
+
+        <!-- Analytics -->
+        <div class="dash-section">
+            <h2>Skill Demand Analytics</h2>
+            <p style="color:var(--text-secondary);font-size:0.8rem;margin-bottom:0.5rem;">Data from the dataset — most offered and most in demand.</p>
+            <div class="analytics-grid">
+                <div class="chart-card">
+                    <h3>Most Offered Skills</h3>
+                    <div id="chartOffered"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Most Required Skills</h3>
+                    <div id="chartRequired"></div>
+                </div>
+                <div class="chart-card full-width">
+                    <h3>Unmet Demand (Skill Gap)</h3>
+                    <div id="chartGaps"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Skill Swap Platform | Data Science Project</p>
+        </div>
+    </footer>
+
+<script>
+// ── Task Search ──
+async function searchTask() {
+    const desc = document.getElementById('taskInput').value.trim();
+    if (!desc) return;
+    const status = document.getElementById('searchStatus');
+    const results = document.getElementById('taskResults');
+    status.innerHTML = '<span class="spinner-sm"></span> Searching...';
+    results.innerHTML = '';
+    try {
+        const res = await fetch('/api/search-task', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ task_description: desc })
+        });
+        const data = await res.json();
+        status.textContent = '';
+        if (!data.matches || !data.matches.length) {
+            results.innerHTML = '<p class="no-results-msg">No matches found. Try different keywords.</p>';
+            return;
+        }
+        results.innerHTML = data.matches.map((m, i) => `
+            <div class="result-card">
+                <div class="result-header">
+                    <h4>#${i+1} ${m.name}</h4>
+                    <span class="result-score">Score: ${m.combined_score}</span>
+                </div>
+                <p class="result-desc">${m.description ? m.description.substring(0, 120) + '...' : ''}</p>
+                <div class="result-skills">
+                    ${(m.matched_skills_names||[]).map(s => `<span class="skill-tag-mini skill-receive">${s}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        status.textContent = 'Error. Try again.';
+    }
+}
+
+// ── Analytics Charts ──
+const mostOffered = {{ most_offered | tojson }};
+const mostRequired = {{ most_required | tojson }};
+const skillGaps = {{ skill_gaps | tojson }};
+
+Plotly.newPlot('chartOffered', [{
+    x: mostOffered.map(s => s.count),
+    y: mostOffered.map(s => s.skill_name),
+    type: 'bar', orientation: 'h',
+    marker: { color: '#2563eb', opacity: 0.85 }
+}], {
+    margin: { l: 120, r: 10, t: 5, b: 25 },
+    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
+    xaxis: { tickfont: { size: 10 } },
+    height: 220, font: { family: 'inherit' }
+}, {responsive: true, displayModeBar: false});
+
+Plotly.newPlot('chartRequired', [{
+    x: mostRequired.map(s => s.count),
+    y: mostRequired.map(s => s.skill_name),
+    type: 'bar', orientation: 'h',
+    marker: { color: '#10b981', opacity: 0.85 }
+}], {
+    margin: { l: 120, r: 10, t: 5, b: 25 },
+    yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
+    xaxis: { tickfont: { size: 10 } },
+    height: 220, font: { family: 'inherit' }
+}, {responsive: true, displayModeBar: false});
+
+Plotly.newPlot('chartGaps', [{
+    x: skillGaps.map(s => s.skill_name),
+    y: skillGaps.map(s => s.gap_score),
+    type: 'bar',
+    marker: { color: skillGaps.map(s => s.gap_score), colorscale: 'Viridis', opacity: 0.85 },
+    text: skillGaps.map(s => `+${s.gap_score}`),
+    textposition: 'auto',
+    textfont: { size: 11 }
+}], {
+    margin: { l: 40, r: 10, t: 5, b: 60 },
+    xaxis: { tickangle: -35, tickfont: { size: 10 } },
+    yaxis: { tickfont: { size: 10 } },
+    height: 240, font: { family: 'inherit' }
+}, {responsive: true, displayModeBar: false});
+</script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - Skill Swap</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .setup-wrap {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem 3rem;
+        }
+        .setup-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+        .setup-card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+        .setup-card .sub {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-color);
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .section-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 1.5rem 0 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .section-label .count-badge {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 1px 7px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        /* Skill Picker */
+        .skill-picker { position: relative; }
+        .skill-search-input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-color);
+        }
+        .skill-search-input:focus { outline: none; border-color: var(--primary-color); }
+        .skill-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 200;
+            display: none;
+            box-shadow: var(--shadow-lg);
+        }
+        .skill-dropdown.open { display: block; }
+        .dropdown-category {
+            padding: 5px 14px 2px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            background: var(--bg-color);
+        }
+        .dropdown-item {
+            padding: 7px 16px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+        }
+        .dropdown-item:hover { background: #eff6ff; }
+        .dropdown-item.selected { color: var(--secondary-color); font-weight: 500; }
+
+        /* Chips */
+        .selected-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.6rem;
+            min-height: 30px;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .chip:hover { opacity: 0.7; }
+        .chip-offer { background: #dcfce7; color: #166534; }
+        .chip-require { background: #dbeafe; color: #1e40af; }
+        .chip .x { font-size: 0.7rem; opacity: 0.6; }
+        .chips-hint { color: var(--text-secondary); font-size: 0.82rem; font-style: italic; }
+        .error-msg { color: var(--danger-color); font-size: 0.85rem; margin-top: 0.3rem; display: none; }
+        .field-note { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        #save-error { color: var(--danger-color); text-align: center; margin-top: 1rem; }
+
+        .setup-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand"><h1>Skill Swap</h1></div>
+        </div>
+    </nav>
+
+    <div class="setup-wrap">
+        <div class="setup-card">
+            <h2>Set up your profile</h2>
+            <p class="sub">Select the skills you offer and the skills you need so we can find matches.</p>
+
+            <div class="form-group">
+                <label for="name">Display Name</label>
+                <input type="text" id="name" value="{{ user.name }}">
+                <div class="error-msg" id="name-err">Please enter your name.</div>
+            </div>
+
+            <div class="form-group">
+                <label>About You <span style="font-weight:400;color:var(--text-secondary)">(optional)</span></label>
+                <textarea id="bio" placeholder="Brief description of yourself">{{ user.description }}</textarea>
+            </div>
+
+            <!-- Skills Offered -->
+            <div class="section-label">Skills You Offer <span class="count-badge" id="offer-count">0</span></div>
+            <div class="form-group">
+                <div class="skill-picker">
+                    <input class="skill-search-input" id="offer-search" type="text"
+                           placeholder="Search skills..." autocomplete="off">
+                    <div class="skill-dropdown" id="offer-dropdown"></div>
+                </div>
+                <div class="field-note">Select from the catalogue. At least one required.</div>
+                <div class="selected-chips" id="offer-chips">
+                    <span class="chips-hint">None selected</span>
+                </div>
+                <div class="error-msg" id="offer-err">Select at least one skill you offer.</div>
+            </div>
+
+            <!-- Skills Required -->
+            <div class="section-label">Skills You Need <span class="count-badge" id="require-count">0</span></div>
+            <div class="form-group">
+                <div class="skill-picker">
+                    <input class="skill-search-input" id="require-search" type="text"
+                           placeholder="Search skills..." autocomplete="off">
+                    <div class="skill-dropdown" id="require-dropdown"></div>
+                </div>
+                <div class="field-note">Select from the catalogue. At least one required.</div>
+                <div class="selected-chips" id="require-chips">
+                    <span class="chips-hint">None selected</span>
+                </div>
+                <div class="error-msg" id="require-err">Select at least one skill you need.</div>
+            </div>
+
+            <div class="setup-actions">
+                <button class="btn btn-primary btn-large" onclick="save()">Continue to Dashboard</button>
+            </div>
+            <div id="save-error"></div>
+        </div>
+    </div>
+
+<script>
+const ALL_SKILLS = {{ skills | tojson }};
+let selectedOffer = {}, selectedRequire = {};
+
+function buildPicker(searchId, dropId, chipsId, map, cls, countId) {
+    const sEl = document.getElementById(searchId);
+    const dEl = document.getElementById(dropId);
+    const cEl = document.getElementById(chipsId);
+    const nEl = document.getElementById(countId);
+
+    function render(q) {
+        q = (q||'').toLowerCase();
+        const f = ALL_SKILLS.filter(s => s.skill_name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+        if (!f.length) { dEl.innerHTML = '<div style="padding:10px 16px;color:var(--text-secondary);font-size:0.88rem">No skills found</div>'; return; }
+        const cats = {};
+        f.forEach(s => { (cats[s.category] = cats[s.category] || []).push(s); });
+        let h = '';
+        Object.entries(cats).forEach(([c, ss]) => {
+            h += `<div class="dropdown-category">${c}</div>`;
+            ss.forEach(s => {
+                const sel = map[s.skill_id] !== undefined;
+                h += `<div class="dropdown-item ${sel?'selected':''}" data-id="${s.skill_id}" data-name="${s.skill_name}"><span>${s.skill_name}</span>${sel?'<span>&#10003;</span>':''}</div>`;
+            });
+        });
+        dEl.innerHTML = h;
+        dEl.querySelectorAll('.dropdown-item').forEach(it => {
+            it.addEventListener('click', () => {
+                if (map[it.dataset.id]) delete map[it.dataset.id]; else map[it.dataset.id] = it.dataset.name;
+                chips(); render(sEl.value);
+            });
+        });
+    }
+    function chips() {
+        const k = Object.keys(map);
+        nEl.textContent = k.length;
+        if (!k.length) { cEl.innerHTML = '<span class="chips-hint">None selected</span>'; return; }
+        cEl.innerHTML = k.map(id => `<span class="chip ${cls}" data-id="${id}">${map[id]} <span class="x">&#10005;</span></span>`).join('');
+        cEl.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => { delete map[c.dataset.id]; chips(); render(sEl.value); }));
+    }
+    sEl.addEventListener('input', () => { render(sEl.value); dEl.classList.add('open'); });
+    sEl.addEventListener('focus', () => { render(sEl.value||''); dEl.classList.add('open'); });
+    document.addEventListener('click', e => { if (!sEl.contains(e.target) && !dEl.contains(e.target)) dEl.classList.remove('open'); });
+}
+buildPicker('offer-search', 'offer-dropdown', 'offer-chips', selectedOffer, 'chip-offer', 'offer-count');
+buildPicker('require-search', 'require-dropdown', 'require-chips', selectedRequire, 'chip-require', 'require-count');
+
+async function save() {
+    let valid = true;
+    const nm = document.getElementById('name').value.trim();
+    if (!nm) { document.getElementById('name-err').style.display = 'block'; valid = false; }
+    else document.getElementById('name-err').style.display = 'none';
+    if (!Object.keys(selectedOffer).length) { document.getElementById('offer-err').style.display = 'block'; valid = false; }
+    else document.getElementById('offer-err').style.display = 'none';
+    if (!Object.keys(selectedRequire).length) { document.getElementById('require-err').style.display = 'block'; valid = false; }
+    else document.getElementById('require-err').style.display = 'none';
+    if (!valid) return;
+
+    const errEl = document.getElementById('save-error');
+    errEl.textContent = '';
+    try {
+        const res = await fetch('/api/save-onboarding', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: nm,
+                description: document.getElementById('bio').value.trim(),
+                skills_offered: Object.keys(selectedOffer),
+                skills_required: Object.keys(selectedRequire)
+            })
+        });
+        const json = await res.json();
+        if (!res.ok) { errEl.textContent = json.error; return; }
+        window.location.href = json.redirect;
+    } catch(e) { errEl.textContent = 'Something went wrong.'; }
+}
+</script>
+</body>
+</html>

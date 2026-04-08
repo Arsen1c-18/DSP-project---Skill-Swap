@@ -10,7 +10,7 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <h1>🔄 Skill Swap</h1>
+                <h1>Skill Swap</h1>
             </div>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
@@ -29,13 +29,13 @@
 
     <div class="container main-content">
         <div class="page-header">
-            <h1>🔍 Find Help with NLP-Powered Task Search</h1>
-            <p class="subtitle">Describe your project or task, and we'll find the perfect person to help you</p>
+            <h1>Find Help by Task</h1>
+            <p class="subtitle">Describe what you need done and we'll match you with users who offer the right skills.</p>
         </div>
 
         <div class="search-section">
             <div class="search-box">
-                <h3>What do you need help with?</h3>
+                <h3>What do you need done?</h3>
                 <form id="taskSearchForm">
                     <textarea 
                         id="taskDescription" 
@@ -86,7 +86,7 @@
 
         <div id="searchResults" class="search-results" style="display: none;">
             <h2>Search Results</h2>
-            <div id="taskDescription"></div>
+            <div id="taskResultDescription"></div>
             <div id="resultsContainer" class="matches-grid"></div>
         </div>
     </div>
@@ -98,6 +98,14 @@
     </footer>
 
     <script>
+        // Pre-fill from onboarding
+        const pendingTask = {{ pending_task | tojson }};
+        if (pendingTask) {
+            document.getElementById('taskDescription').value = pendingTask;
+            // auto-trigger search
+            setTimeout(() => document.getElementById('taskSearchForm').requestSubmit(), 300);
+        }
+
         function fillExample(element) {
             document.getElementById('taskDescription').value = element.textContent.trim();
         }

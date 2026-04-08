@@ -39,6 +39,22 @@ class RecommendationEngine:
             df_to_save.to_csv(config.USERS_FILE, index=False)
             return True
         return False
+
+    def update_user_full(self, user_id: str, name: str, description: str,
+                         skills_offered: list, skills_required: list) -> bool:
+        """Update user name, description, and skill lists; save to CSV"""
+        idx = self.users_df.index[self.users_df['user_id'] == user_id]
+        if not idx.empty:
+            self.users_df.loc[idx, 'name'] = name
+            self.users_df.loc[idx, 'description'] = description
+            self.users_df.at[idx[0], 'skills_offered'] = skills_offered
+            self.users_df.at[idx[0], 'skills_required'] = skills_required
+            df_to_save = self.users_df.copy()
+            df_to_save['skills_offered'] = df_to_save['skills_offered'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
+            df_to_save['skills_required'] = df_to_save['skills_required'].apply(lambda x: ','.join(x) if isinstance(x, list) else x)
+            df_to_save.to_csv(config.USERS_FILE, index=False)
+            return True
+        return False
     
     def get_all_users(self) -> List[Dict]:
         """Get all user profiles"""
