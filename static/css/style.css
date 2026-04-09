@@ -847,14 +847,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* ===== FOOTER ===== */
-footer {
-    background-color: var(--text-primary);
-    color: white;
-    text-align: center;
-    padding: 2rem;
-    margin-top: 4rem;
-}
 
 /* ===== UTILITIES ===== */
 .no-results {
