@@ -78,11 +78,47 @@
         .insight-card li:last-child { border-bottom: none; }
 
         /* Network */
+        .network-wrap {
+            position: relative;
+        }
+        .network-search {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 0.65rem;
+        }
+        .network-search input {
+            padding: 0.42rem 0.85rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.83rem;
+            font-family: inherit;
+            width: 220px;
+            transition: border-color 0.2s;
+        }
+        .network-search input:focus { outline: none; border-color: #6366f1; }
+        .network-search button {
+            padding: 0.4rem 0.9rem;
+            background: #6366f1; color: white;
+            border: none; border-radius: 6px;
+            font-size: 0.82rem; cursor: pointer;
+        }
+        .network-search button:hover { background: #4f46e5; }
         #networkGraph {
-            width: 100%; height: 500px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: #f8fafd;
+            width: 100%; height: 540px;
+            border: none;
+            border-radius: 12px;
+            background: #0f172a;
+        }
+        .net-legend {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .net-legend-item {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.75rem; color: var(--text-secondary);
+        }
+        .net-legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%; flex-shrink: 0;
         }
     </style>
 </head>
@@ -143,8 +179,15 @@
     <div id="tab-network" class="tab-panel active">
         <div class="landing-section">
             <h2>Skill Co-occurrence Network</h2>
-            <p class="section-desc">Each node is a skill. An edge connects two skills frequently offered <em>together</em>. Node size = how many users offer it. Hover for details.</p>
-            <div id="networkGraph"></div>
+            <p class="section-desc">Each node is a skill coloured by domain. Edge thickness = how often two skills appear together. Node size = how many users offer it. Click a node to highlight its neighbours.</p>
+            <div class="network-wrap">
+                <div class="network-search">
+                    <input type="text" id="nodeSearchInput" placeholder="Search for a skill..." oninput="highlightNode(this.value)">
+                    <button onclick="resetHighlight()">Reset</button>
+                </div>
+                <div id="networkGraph"></div>
+                <div class="net-legend" id="netLegend"></div>
+            </div>
         </div>
     </div>
 
@@ -257,78 +300,220 @@ function switchTab(name, btn) {
     if (name === 'network' && !window._networkDrawn) drawNetwork();
 }
 
-// Draw network immediately since it's the first tab
+// ── Category → colour palette ─────────────────────────────────
+const CATEGORY_COLORS = {
+    'Programming':           '#6366f1',  // indigo
+    'Web Development':       '#3b82f6',  // blue
+    'Data Science':          '#06b6d4',  // cyan
+    'Design':                '#ec4899',  // pink
+    'Content & Writing':     '#f59e0b',  // amber
+    'Marketing':             '#f97316',  // orange
+    'Business & Finance':    '#10b981',  // emerald
+    'Teaching & Training':   '#84cc16',  // lime
+    'DevOps & Cloud':        '#8b5cf6',  // violet
+    'Mobile Development':    '#14b8a6',  // teal
+    'Languages':             '#e879f9',  // fuchsia
+    'Research & Academic':   '#fb923c',  // light-orange
+    'Other':                 '#94a3b8',  // slate
+};
+const DEFAULT_NODE_COLOR = '#94a3b8';
+
+// Node label → category map (populated after fetch)
+let _nodeColorMap = {};
+let _graphData = null;   // store for highlight/reset
+
 async function drawNetwork() {
     window._networkDrawn = true;
     const el = document.getElementById('networkGraph');
-    el.innerHTML = '<div style="padding:2rem;color:var(--text-secondary);font-size:0.88rem;text-align:center">Loading network graph...</div>';
+    el.innerHTML = '<div style="padding:2rem;color:#94a3b8;font-size:0.9rem;text-align:center;">Loading skill network…</div>';
+
     try {
         const res = await fetch('/api/skill-network');
-        const g = await res.json();
+        const g   = await res.json();
         if (!g.nodes || !g.nodes.length) {
-            el.innerHTML = '<div style="padding:2rem;color:var(--text-secondary)">No data available.</div>';
+            el.innerHTML = '<div style="padding:2rem;color:#94a3b8">No data available.</div>';
             return;
         }
-        // Multi-ring radial layout: most frequent nodes in center
-        const nodeMap = {};
-        const sorted = [...g.nodes].sort((a, b) => b.frequency - a.frequency);
-        const rings = [1, 6, 15, sorted.length];
-        sorted.forEach((n, i) => {
-            let ring = 0;
-            while (ring < rings.length - 1 && i >= rings[ring]) ring++;
-            const nodesInRing = ring === 0 ? 1 : rings[ring] - rings[ring - 1];
-            const posInRing  = ring === 0 ? 0 : i - rings[ring - 1];
-            const angle = ring === 0 ? 0 : (2 * Math.PI * posInRing) / nodesInRing;
-            const radii = [0, 0.33, 0.62, 1.0];
-            const r = radii[Math.min(ring, radii.length - 1)];
-            nodeMap[n.id] = { x: r * Math.cos(angle), y: r * Math.sin(angle), label: n.label, freq: n.frequency };
+        _graphData = g;
+
+        // ── Assign colours by guessing category from label ──────────
+        // The network API only returns {id, label, frequency}. We infer
+        // category by checking the all-skills list baked into the ARM rules page
+        // (not available here), so we use a heuristic keyword map.
+        const KEYWORD_CATEGORY = [
+            [['Python','Java','Go','C++','Rust','Swift','Kotlin','PHP','TypeScript','R ','Scala'], 'Programming'],
+            [['React','Node','HTML','CSS','Angular','Vue','Django','Flask','Next','Tailwind'], 'Web Development'],
+            [['Machine Learning','Deep Learning','Data','SQL','Statistics','Analytics','Tableau','Power BI','Pandas','TensorFlow','Predictive'], 'Data Science'],
+            [['Figma','UI/UX','Photoshop','Illustrator','Graphic','Animation','3D','Brand','Video','Adobe'], 'Design'],
+            [['Writing','Copywriting','Blogging','SEO','Content','Script','Proofreading','Technical Writing'], 'Content & Writing'],
+            [['Marketing','Social Media','Campaign','Influencer','Google Analytics','Ads','Email Marketing'], 'Marketing'],
+            [['Business','Excel','Finance','Accounting','Project Management','Strategy','Consulting'], 'Business & Finance'],
+            [['Teaching','Curriculum','Coaching','Mentoring','Training','Public Speaking','E-Learning'], 'Teaching & Training'],
+            [['AWS','Docker','Kubernetes','CI/CD','Git','DevOps','Cloud','Infrastructure'], 'DevOps & Cloud'],
+            [['Android','iOS','Flutter','React Native','Swift','Kotlin'], 'Mobile Development'],
+        ];
+        function inferCategory(label) {
+            for (const [keywords, cat] of KEYWORD_CATEGORY) {
+                if (keywords.some(k => label.includes(k))) return cat;
+            }
+            return 'Other';
+        }
+        g.nodes.forEach(n => {
+            const cat = inferCategory(n.label);
+            n._category = cat;
+            _nodeColorMap[n.id] = CATEGORY_COLORS[cat] || DEFAULT_NODE_COLOR;
         });
 
-        const maxW = Math.max(...g.edges.map(e => e.weight));
-        const edgeTraces = g.edges.map(e => {
-            const from = nodeMap[e.from], to = nodeMap[e.to];
-            if (!from || !to) return null;
-            const opacity = 0.25 + 0.6 * (e.weight / maxW);
-            return {
-                x: [from.x, to.x, null], y: [from.y, to.y, null],
-                mode: 'lines', type: 'scatter',
-                line: { width: Math.max(1, Math.round(e.normalized * 5)), color: `rgba(99,102,241,${opacity.toFixed(2)})` },
-                hoverinfo: 'skip', showlegend: false
-            };
-        }).filter(Boolean);
+        // ── Build legend ─────────────────────────────────────────────
+        const usedCats = [...new Set(g.nodes.map(n => n._category))];
+        const legendEl = document.getElementById('netLegend');
+        legendEl.innerHTML = usedCats.map(cat =>
+            `<div class="net-legend-item">
+                <div class="net-legend-dot" style="background:${CATEGORY_COLORS[cat] || DEFAULT_NODE_COLOR}"></div>
+                ${cat}
+             </div>`
+        ).join('');
 
-        const maxFreq = Math.max(...g.nodes.map(n => n.frequency));
-        const nodeTrace = {
-            x: g.nodes.map(n => nodeMap[n.id].x),
-            y: g.nodes.map(n => nodeMap[n.id].y),
-            mode: 'markers+text', type: 'scatter',
-            text: g.nodes.map(n => n.label),
-            textposition: 'top center',
-            textfont: { size: 9, color: '#1e293b' },
-            marker: {
-                size: g.nodes.map(n => 9 + 20 * (n.frequency / maxFreq)),
-                color: g.nodes.map(n => n.frequency),
-                colorscale: [[0,'#bfdbfe'],[0.5,'#3b82f6'],[1,'#1d4ed8']],
-                showscale: true,
-                colorbar: { title: 'Frequency', thickness: 12, len: 0.5, tickfont: { size: 10 } },
-                line: { color: 'white', width: 1.5 }
-            },
-            customdata: g.nodes.map(n => [n.label, n.frequency]),
-            hovertemplate: '<b>%{customdata[0]}</b><br>Offered by %{customdata[1]} users<extra></extra>',
-            showlegend: false
-        };
+        renderGraph(g);
 
-        Plotly.newPlot('networkGraph', [...edgeTraces, nodeTrace], {
-            xaxis: { showgrid: false, zeroline: false, showticklabels: false },
-            yaxis: { showgrid: false, zeroline: false, showticklabels: false },
-            margin: { l: 10, r: 10, t: 10, b: 10 },
-            paper_bgcolor: '#f8fafd', plot_bgcolor: '#f8fafd',
-            hovermode: 'closest', font: { family: 'inherit' }, height: 500
-        }, { responsive: true, displayModeBar: false });
     } catch(err) {
         el.innerHTML = '<div style="padding:2rem;color:#ef4444">Failed to load network.</div>';
+        console.error(err);
     }
 }
+
+function renderGraph(g, highlightIds) {
+    const nodeMap = {};
+    const sorted  = [...g.nodes].sort((a, b) => b.frequency - a.frequency);
+
+    // Multi-ring radial layout
+    const rings = [1, 6, 14, sorted.length];
+    sorted.forEach((n, i) => {
+        let ring = 0;
+        while (ring < rings.length - 1 && i >= rings[ring]) ring++;
+        const nodesInRing = ring === 0 ? 1 : rings[ring] - rings[ring - 1];
+        const posInRing   = ring === 0 ? 0 : i - rings[ring - 1];
+        const angle  = ring === 0 ? 0 : (2 * Math.PI * posInRing / nodesInRing) - Math.PI / 2;
+        const radii  = [0, 0.32, 0.62, 1.0];
+        const r = radii[Math.min(ring, radii.length - 1)];
+        nodeMap[n.id] = { x: r * Math.cos(angle), y: r * Math.sin(angle), label: n.label, freq: n.frequency, color: _nodeColorMap[n.id] };
+    });
+
+    const maxW    = Math.max(...g.edges.map(e => e.weight), 1);
+    const edgeDim = highlightIds ? 0.04 : null;
+
+    const edgeTraces = g.edges.map(e => {
+        const from = nodeMap[e.from], to = nodeMap[e.to];
+        if (!from || !to) return null;
+        const isHl = highlightIds && (highlightIds.has(e.from) || highlightIds.has(e.to));
+        const opacity = isHl ? (0.4 + 0.55 * (e.weight / maxW))
+                      : highlightIds ? 0.04
+                      : (0.2 + 0.55 * (e.weight / maxW));
+        const col = isHl
+            ? `rgba(250,204,21,${opacity.toFixed(2)})`   // yellow highlight
+            : `rgba(148,163,184,${opacity.toFixed(2)})`; // slate default
+        return {
+            x: [from.x, to.x, null], y: [from.y, to.y, null],
+            mode: 'lines', type: 'scatter',
+            line: { width: Math.max(isHl ? 2 : 1, Math.round(e.normalized * 5)), color: col },
+            hoverinfo: 'skip', showlegend: false
+        };
+    }).filter(Boolean);
+
+    const maxFreq = Math.max(...g.nodes.map(n => n.frequency), 1);
+    const nodeTrace = {
+        x: g.nodes.map(n => nodeMap[n.id].x),
+        y: g.nodes.map(n => nodeMap[n.id].y),
+        mode: 'markers+text', type: 'scatter',
+        ids: g.nodes.map(n => n.id),
+        text: g.nodes.map(n => n.label),
+        textposition: 'top center',
+        textfont: {
+            size: g.nodes.map(n => {
+                if (highlightIds) return highlightIds.has(n.id) ? 11 : 8;
+                return 9;
+            }),
+            color: g.nodes.map(n => {
+                if (highlightIds) return highlightIds.has(n.id) ? '#f1f5f9' : '#475569';
+                return '#cbd5e1';
+            })
+        },
+        marker: {
+            size: g.nodes.map(n => {
+                const base = 10 + 22 * (n.frequency / maxFreq);
+                if (highlightIds) return highlightIds.has(n.id) ? base * 1.25 : base * 0.7;
+                return base;
+            }),
+            color: g.nodes.map(n => {
+                if (highlightIds) return highlightIds.has(n.id) ? _nodeColorMap[n.id] : '#1e293b';
+                return _nodeColorMap[n.id];
+            }),
+            opacity: g.nodes.map(n => {
+                if (highlightIds) return highlightIds.has(n.id) ? 1.0 : 0.25;
+                return 0.9;
+            }),
+            line: {
+                color: g.nodes.map(n =>
+                    highlightIds && highlightIds.has(n.id) ? '#facc15' : 'rgba(255,255,255,0.15)'
+                ),
+                width: g.nodes.map(n =>
+                    highlightIds && highlightIds.has(n.id) ? 2.5 : 1
+                )
+            }
+        },
+        customdata: g.nodes.map(n => [n.label, n.frequency, n._category]),
+        hovertemplate: '<b>%{customdata[0]}</b><br>Domain: %{customdata[2]}<br>Offered by %{customdata[1]} users<extra></extra>',
+        showlegend: false
+    };
+
+    Plotly.react('networkGraph', [...edgeTraces, nodeTrace], {
+        xaxis: { showgrid: false, zeroline: false, showticklabels: false, fixedrange: true },
+        yaxis: { showgrid: false, zeroline: false, showticklabels: false, fixedrange: true, scaleanchor: 'x' },
+        margin: { l: 10, r: 10, t: 10, b: 10 },
+        paper_bgcolor: '#0f172a',
+        plot_bgcolor:  '#0f172a',
+        hovermode: 'closest',
+        font: { family: 'inherit' },
+        height: 540
+    }, { responsive: true, displayModeBar: false });
+
+    // Click to highlight neighbours
+    document.getElementById('networkGraph').on('plotly_click', data => {
+        const pt = data.points[0];
+        if (!pt || !_graphData) return;
+        const clickedId = _graphData.nodes[pt.pointIndex]?.id;
+        if (!clickedId) return;
+        const neighbours = new Set([clickedId]);
+        _graphData.edges.forEach(e => {
+            if (e.from === clickedId) neighbours.add(e.to);
+            if (e.to   === clickedId) neighbours.add(e.from);
+        });
+        renderGraph(_graphData, neighbours);
+    });
+}
+
+function highlightNode(query) {
+    if (!_graphData) return;
+    const q = query.trim().toLowerCase();
+    if (!q) { renderGraph(_graphData); return; }
+    const matched = new Set();
+    _graphData.nodes.forEach(n => {
+        if (n.label.toLowerCase().includes(q)) {
+            matched.add(n.id);
+            _graphData.edges.forEach(e => {
+                if (e.from === n.id) matched.add(e.to);
+                if (e.to   === n.id) matched.add(e.from);
+            });
+        }
+    });
+    if (matched.size) renderGraph(_graphData, matched);
+}
+
+function resetHighlight() {
+    document.getElementById('nodeSearchInput').value = '';
+    if (_graphData) renderGraph(_graphData);
+}
+
 drawNetwork();
 </script>
 </body>

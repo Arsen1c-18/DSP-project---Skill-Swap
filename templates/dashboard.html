@@ -354,10 +354,10 @@
                         <div id="chartSupplyDemand"></div>
                     </div>
 
-                    <!-- Skill Gap: horizontal bar with gradient -->
+                    <!-- Skill Gap: demand vs supply grouped -->
                     <div class="chart-card full-width">
                         <h3>Skill Gap — Unmet Demand</h3>
-                        <p class="chart-sub">How many more people need this skill than offer it. Bigger = bigger opportunity.</p>
+                        <p class="chart-sub">🟠 Demand (users who need it) &nbsp;vs&nbsp; 🔵 Supply (users who offer it). Gap = Demand − Supply shown on each bar.</p>
                         <div id="chartGap"></div>
                     </div>
 
@@ -573,27 +573,44 @@ Plotly.newPlot('chartSupplyDemand', [
     paper_bgcolor: 'rgba(0,0,0,0)',
 }, { responsive: true, displayModeBar: false });
 
-// Skill gap: horizontal bars with red-to-green gradient
-const gapColors = skillGaps.map((_, i) => {
-    const t = i / Math.max(skillGaps.length - 1, 1);
-    const r = Math.round(239 * (1 - t) + 16 * t);
-    const g = Math.round(68 * (1 - t) + 185 * t);
-    const b = Math.round(68 * (1 - t) + 129 * t);
-    return `rgb(${r},${g},${b})`;
-});
+// Skill Gap: grouped Demand vs Supply horizontal bars, sorted by gap_score descending
+const gapSorted = [...skillGaps].sort((a, b) => b.gap_score - a.gap_score);
+const gapSkillNames = gapSorted.map(s => s.skill_name);
+const gapDemandVals = gapSorted.map(s => s.demand);
+const gapSupplyVals = gapSorted.map(s => s.supply);
+const gapScoreVals  = gapSorted.map(s => s.gap_score);
 
-Plotly.newPlot('chartGap', [{
-    x: skillGaps.map(s => s.gap_score),
-    y: skillGaps.map(s => s.skill_name),
-    type: 'bar', orientation: 'h',
-    marker: { color: gapColors },
-    text: skillGaps.map(s => `+${s.gap_score} unmet`),
-    textposition: 'auto', textfont: { size: 10, color: 'white' }
-}], {
-    margin: { l: 130, r: 60, t: 10, b: 25 },
+Plotly.newPlot('chartGap', [
+    {
+        name: 'Demand (need it)',
+        x: gapDemandVals,
+        y: gapSkillNames,
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: '#f97316' },
+        text: gapScoreVals.map(g => `gap +${g}`),
+        textposition: 'outside',
+        textfont: { size: 10, color: '#92400e' },
+        hovertemplate: '<b>%{y}</b><br>Demand: %{x} users<br>Gap: +%{text}<extra></extra>',
+        cliponaxis: false
+    },
+    {
+        name: 'Supply (offer it)',
+        x: gapSupplyVals,
+        y: gapSkillNames,
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: '#3b82f6' },
+        hovertemplate: '<b>%{y}</b><br>Supply: %{x} users<extra></extra>',
+    }
+], {
+    barmode: 'group',
+    margin: { l: 145, r: 70, t: 10, b: 30 },
     yaxis: { autorange: 'reversed', tickfont: { size: 11 } },
-    xaxis: { tickfont: { size: 10 } },
-    height: 220, font: { family: 'inherit' },
+    xaxis: { tickfont: { size: 10 }, title: { text: 'Number of users', font: { size: 10 } } },
+    legend: { orientation: 'h', y: -0.18, font: { size: 11 } },
+    height: 300,
+    font: { family: 'inherit' },
     plot_bgcolor: 'rgba(0,0,0,0)',
     paper_bgcolor: 'rgba(0,0,0,0)',
 }, { responsive: true, displayModeBar: false });
