@@ -304,6 +304,7 @@
                             </div>
                         </div>
                         {% endif %}
+                        <a href="/profile/{{ m.user_id }}" class="btn btn-primary btn-small" style="margin-top:0.4rem;font-size:0.75rem;padding:0.3rem 0.7rem;">View Profile</a>
                     </div>
                     {% endfor %}
                 </div>
@@ -456,7 +457,7 @@ function filterSkills(query) {
     ).slice(0, 30);
 
     dropdown.innerHTML = filtered.length ? filtered.map(s => `
-        <div class="skill-option" onclick="selectSkill('${s.skill_id}', '${s.skill_name.replace(/'/g,"\\'")}')">
+        <div class="skill-option" onmousedown="event.preventDefault(); selectSkill('${s.skill_id}', '${s.skill_name.replace(/'/g,"\\'")}')">
             <span>${s.skill_name}</span>
             <span class="cat-badge">${s.category}</span>
         </div>

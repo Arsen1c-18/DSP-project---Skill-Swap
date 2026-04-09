@@ -212,6 +212,45 @@ def api_search_task():
     return jsonify({'task': task_description, 'matches': matches})
 
 
+# ── Profile page ─────────────────────────────────────────────
+@app.route('/profile/<user_id>')
+def profile(user_id):
+    user = recommendation_engine.get_user_by_id(user_id)
+    if not user:
+        return "User not found", 404
+    user['skills_offered_names'] = recommendation_engine.get_skill_names(user['skills_offered'])
+    user['skills_required_names'] = recommendation_engine.get_skill_names(user['skills_required'])
+    matches = recommendation_engine.find_mutual_matches(user_id, top_n=5)
+    for match in matches:
+        match['can_teach_you_names'] = recommendation_engine.get_skill_names(match['can_teach_you'])
+        match['you_can_teach_names'] = recommendation_engine.get_skill_names(match['you_can_teach'])
+    return render_template('profile.html', user=user, matches=matches)
+
+
+# ── Browse users ──────────────────────────────────────────────
+@app.route('/browse')
+def browse():
+    users_df = pd.read_csv(config.USERS_FILE)
+    users = []
+    for _, row in users_df.iterrows():
+        u = row.to_dict()
+        offered_ids = [s.strip() for s in str(u.get('skills_offered', '')).split(',') if s.strip()]
+        required_ids = [s.strip() for s in str(u.get('skills_required', '')).split(',') if s.strip()]
+        u['skills_offered_names'] = recommendation_engine.get_skill_names(offered_ids)
+        u['skills_required_names'] = recommendation_engine.get_skill_names(required_ids)
+        u['skills_offered_categories'] = list(set(
+            skills_df[skills_df['skill_id'].isin(offered_ids)]['category'].tolist()
+        ))
+        users.append(u)
+    skills_by_cat = {}
+    for _, row in skills_df.iterrows():
+        cat = row['category']
+        if cat not in skills_by_cat:
+            skills_by_cat[cat] = []
+        skills_by_cat[cat].append(row['skill_name'])
+    return render_template('browse.html', users=users, skills_by_cat=skills_by_cat)
+
+
 # ── Skill-based search (dropdown selection) ──────────────────
 @app.route('/api/search-skill', methods=['POST'])
 def api_search_skill():

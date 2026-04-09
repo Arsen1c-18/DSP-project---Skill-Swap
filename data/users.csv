@@ -1,5 +1,5 @@
 user_id,name,description,skills_offered,skills_required
-user_001,Moksh,Self-taught Content & Writing specialist. Believe in the power of community learning and skill sharing.,skill_002,skill_039
+user_001,Alice,i like to photograph,"skill_001,skill_005",skill_011
 user_002,Chloe Anderson,Creative professional with background in Programming. Love collaborative learning.,"skill_008,skill_022,skill_110,skill_048,skill_086","skill_099,skill_023"
 user_003,Emma Thompson,Creative professional with background in Data Science & Analytics. Love collaborative learning.,"skill_028,skill_022,skill_036,skill_032","skill_037,skill_013,skill_008"
 user_004,Emma Mitchell,Consultant in Languages field. Dedicated to continuous learning and skill development.,"skill_084,skill_099","skill_015,skill_003,skill_024,skill_026"

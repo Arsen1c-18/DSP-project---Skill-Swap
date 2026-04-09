@@ -14,14 +14,8 @@
             </div>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/home">Recommendations</a></li>
-                <li><a href="/task-search">Task Search</a></li>
-                <li><a href="/browse">Browse Users</a></li>
                 {% if session.get('user_id') %}
-                <li><a href="/profile/{{ session.get('user_id') }}">Profile</a></li>
                 <li><a href="/logout">Logout</a></li>
-                {% else %}
-                <li><a href="/login" style="font-weight: bold;">Login</a></li>
                 {% endif %}
             </ul>
         </div>
