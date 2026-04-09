@@ -159,7 +159,7 @@
                     {% if arm_rules %}
                     <table class="rules-table">
                         <thead>
-                            <tr><th>If offers</th><th>Also likely offers</th><th>Conf.</th><th>Lift</th></tr>
+                            <tr><th>If offers</th><th>Also likely offers</th><th>Conf.</th><th>Lift</th><th>Rule</th></tr>
                         </thead>
                         <tbody>
                             {% for r in arm_rules %}
@@ -168,6 +168,7 @@
                                 <td><span class="arrow">→</span> {{ r.consequent_name }}</td>
                                 <td>{{ (r.confidence * 100)|round|int }}%</td>
                                 <td><span class="lift-badge {% if r.lift < 15 %}med{% endif %}">{{ r.lift }}×</span></td>
+                                <td><span style="font-size:0.7rem;font-weight:700;padding:1px 5px;border-radius:3px;background:{% if r.k == 3 %}#ede9fe;color:#7c3aed{% else %}#f1f5f9;color:#64748b{% endif %};">{{ r.k }}-item</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -200,7 +201,7 @@
     <div id="tab-insights" class="tab-panel">
         <div class="landing-section">
             <h2>Quick Insights</h2>
-            <p class="section-desc">Platform highlights derived from the 200-user dataset.</p>
+            <p class="section-desc">Platform highlights derived from the {{ stats.total_users }}-user dataset.</p>
             <div class="insight-row">
                 <div class="insight-card">
                     <h4>Highest Unmet Demand</h4>
